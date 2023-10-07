@@ -4,7 +4,7 @@ alpha-vantage==2.3.1
 astor==0.8.1
 bcrypt==4.0.1
 blinker==1.5
-certifi==2023.10.07
+certifi==2023.7.22
 cffi==1.15.0
 chardet==5.0.0
 Click==8.1.3
