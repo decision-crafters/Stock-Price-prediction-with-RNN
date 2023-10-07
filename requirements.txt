@@ -22,7 +22,7 @@ Flask-SQLAlchemy==2.5.1
 Flask-WTF==0.15.1
 gast==0.5.3
 google-pasta==0.2.0
-grpcio==1.54.1
+grpcio==1.59.0
 h5py==3.7.2
 idna==3.3.0
 itsdangerous==2.1.1
