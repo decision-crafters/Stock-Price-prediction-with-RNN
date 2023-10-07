@@ -1,5 +1,5 @@
-absl-py==2.0.0
-alembic==1.7.10
+absl-py==0.15.0
+alembic==1.12.0
 alpha-vantage==2.2.2
 astor==0.8.1
 bcrypt==4.0.1
