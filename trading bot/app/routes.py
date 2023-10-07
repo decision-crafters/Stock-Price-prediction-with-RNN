@@ -5,6 +5,7 @@ from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User 
 from werkzeug.urls import url_parse
 import io
+import os 
 
 
 @app.route('/')
@@ -76,12 +77,14 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import pandas as pd
 
+API_KEY= os.environ.get("API_KEY", "changeme")
+
 	# background process: visualizing the graph
 @app.route('/trading_prediction', methods=['POST'])
 @login_required
 def trading_prediction():
 	stock = request.form['namequery']
-	ts = TimeSeries(key='7OMLEP6QI75IRS85', output_format='pandas')
+	ts = TimeSeries(key=API_KEY, output_format='pandas')
 	data, meta_data = ts.get_daily(symbol=stock, outputsize='full')
 	data.to_csv('dataset.csv')
 	#plot dei prezzi storici
