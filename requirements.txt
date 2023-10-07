@@ -10,7 +10,7 @@ chardet==5.2.0
 Click==8.1.7
 cycler==0.11.0
 dominate==2.8.0
-Flask==3.0.0
+Flask==2.2.5
 Flask-Bcrypt==1.0.1
 Flask-Bootstrap==3.3.7.1
 Flask-Ext==0.1
