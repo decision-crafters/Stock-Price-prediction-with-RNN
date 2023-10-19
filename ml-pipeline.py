@@ -1,15 +1,11 @@
-import numpy as np
-import pandas as pd
-import tensorflow as tf
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense, LSTM, Dropout
-from clearml import Task
+from clearml import PipelineDecorator
 
+@PipelineDecorator.component(cache=True, execution_queue="default")
 def data_preparation():
-    task = Task.init(project_name='My Project', task_name='GitHub Action Training')
-    
+    import pandas as pd
+    from sklearn.preprocessing import MinMaxScaler
+    import numpy as np
+
     # Load the training data
     df = pd.read_csv('dataset.csv')
     
@@ -28,25 +24,14 @@ def data_preparation():
         y_train.append(data_training[i, 0])
     X_train, y_train = np.array(X_train), np.array(y_train)
     
-    # Save the preprocessed data
-    np.save('X_train.npy', X_train)
-    np.save('y_train.npy', y_train)
-    task.upload_artifact('X_train', 'X_train.npy')
-    task.upload_artifact('y_train', 'y_train.npy')
-    task.close()
+    return X_train, y_train
 
-def model_training():
-    task = Task.init(project_name='My Project', task_name='Model Training')
-    
-    # Load preprocessed data
-    # In data_preparation
-    #np.save('X_train.npy', X_train)
-    #np.save('y_train.npy', y_train)
+@PipelineDecorator.component(cache=True, execution_queue="default")
+def model_training(X_train, y_train):
+    import tensorflow as tf
+    from tensorflow.keras import Sequential
+    from tensorflow.keras.layers import Dense, LSTM, Dropout
 
-    # In model_training
-    X_train = np.load('X_train.npy')
-    y_train = np.load('y_train.npy')
-    
     # Define and train the model
     regressior = Sequential()
     regressior.add(LSTM(units = 100, activation = 'relu', return_sequences = True, input_shape = (X_train.shape[1], 5)))
@@ -60,33 +45,32 @@ def model_training():
     regressior.add(Dense(units = 1))
     regressior.compile(optimizer='rmsprop', loss='mean_squared_error')
     history = regressior.fit(X_train, y_train, epochs=25, batch_size=64)
-    
-    # Save the trained model
-    regressior.save('trained_model.h5')
-    task.upload_artifact('trained_model', 'trained_model.h5')
-    task.close()
 
-def evaluation():
-    task = Task.init(project_name='My Project', task_name='Evaluation')
+    # After training, log the model to ClearML
+    task = Task.current_task()
+    model_artifact = task.upload_artifact(name="LSTM_model", artifact_object=regressior)
     
-    # Load trained model and test data
-    model = tf.keras.models.load_model(task.artifacts['trained_model'].get())
-    X_train = np.load(task.artifacts['X_train'].get())
-    y_train = np.load(task.artifacts['y_train'].get())
-    
-    # Evaluate the model and generate a report
-    train_score = mean_squared_error(y_train, model.predict(X_train))
-    loss = train_score  # Assuming loss is the MSE for simplicity
-    accuracy = None  # Placeholder, as accuracy isn't provided in the original code
-    report = task.create_report()
-    report.add_metric('score', train_score)
-    report.add_metric('loss', loss)
-    report.add_metric('accuracy', accuracy)
-    report.send()
-    
-    task.close()
+    return history
 
-if __name__ == "__main__":
-    data_preparation()
-    model_training()
-    evaluation()
+@PipelineDecorator.pipeline(
+    name='LSTM Training Pipeline',
+    project='Stock Price Prediction',
+    version='0.1'
+)
+def pipeline_logic(do_training: bool):
+    if do_training:
+        X_train, y_train = data_preparation()
+        training_history = model_training(X_train, y_train)
+
+        # Create a report
+        task = Task.current_task()
+        report = task.create_report(name="Training Report", type=Task.ReportType.Main)
+        report.add_scalar_series(title="Training Loss", series=training_history.history['loss'])
+        # Add more metrics or plots as needed
+        report.publish()
+
+        return training_history
+
+if __name__ == '__main__':
+    PipelineDecorator.run_locally()
+    pipeline_logic(do_training=True)
