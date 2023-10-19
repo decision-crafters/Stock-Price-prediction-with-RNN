@@ -1,5 +1,4 @@
-from clearml import PipelineDecorator
-from clearml import Task
+from clearml import Task, PipelineDecorator
 
 @PipelineDecorator.component(cache=True, execution_queue="default")
 def data_preparation():
@@ -32,8 +31,6 @@ def model_training(X_train, y_train):
     import tensorflow as tf
     from tensorflow.keras import Sequential
     from tensorflow.keras.layers import Dense, LSTM, Dropout
-    from clearml import Task
-
 
     # Define and train the model
     regressior = Sequential()
@@ -50,9 +47,12 @@ def model_training(X_train, y_train):
     history = regressior.fit(X_train, y_train, epochs=25, batch_size=64)
 
     # After training, log the model to ClearML
-    task = Task.init(project_name='Stock Price Prediction', task_name='LSTM Training')
-    model_artifact = task.set_model(model=regressior)
-
+    task = Task.current_task()
+    model_artifact = task.upload_artifact(name="LSTM_model", artifact_object=regressior)
+    
+    # Log training loss as an example
+    for epoch, loss in enumerate(history.history['loss']):
+        task.log_scalar('Training Loss', value=loss, iteration=epoch)
     
     return history
 
@@ -65,14 +65,6 @@ def pipeline_logic(do_training: bool):
     if do_training:
         X_train, y_train = data_preparation()
         training_history = model_training(X_train, y_train)
-
-        # Create a report
-        task = Task.current_task()
-        report = task.create_report(name="Training Report", type=Task.ReportType.Main)
-        report.add_scalar_series(title="Training Loss", series=training_history.history['loss'])
-        # Add more metrics or plots as needed
-        report.publish()
-
         return training_history
 
 if __name__ == '__main__':
