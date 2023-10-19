@@ -32,6 +32,8 @@ def model_training(X_train, y_train):
     import tensorflow as tf
     from tensorflow.keras import Sequential
     from tensorflow.keras.layers import Dense, LSTM, Dropout
+    from clearml import Task
+
 
     # Define and train the model
     regressior = Sequential()
@@ -48,8 +50,9 @@ def model_training(X_train, y_train):
     history = regressior.fit(X_train, y_train, epochs=25, batch_size=64)
 
     # After training, log the model to ClearML
-    task = Task.current_task()
-    model_artifact = task.upload_artifact(name="LSTM_model", artifact_object=regressior)
+    task = Task.init(project_name='Stock Price Prediction', task_name='LSTM Training')
+    model_artifact = task.set_model(model=regressior)
+
     
     return history
 
