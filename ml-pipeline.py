@@ -1,4 +1,5 @@
 from clearml import PipelineDecorator
+from clearml import Task
 
 @PipelineDecorator.component(cache=True, execution_queue="default")
 def data_preparation():
