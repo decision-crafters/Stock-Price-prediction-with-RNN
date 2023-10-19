@@ -52,7 +52,7 @@ def model_training(X_train, y_train):
 
     # Log the saved model to ClearML
     task = Task.current_task()
-    task.upload_artifact(name="LSTM_model", artifact_object=model_path)
+    task.upload_artifact(name="lets-test-this", artifact_object=model_path)
     
     # Log training loss using the correct method
     for epoch, loss in enumerate(history.history['loss']):
