@@ -5,9 +5,13 @@ on:
     branches:
       - master  # or your default branch
 
+
+      
 jobs:
   train:
     runs-on: ubuntu-latest
+    env:
+      CLEARML_API_KEY: ${{ secrets.CLEARML_API_KEY }}
 
     steps:
     - name: Checkout code
@@ -24,5 +28,4 @@ jobs:
 
     - name: Train model with ClearML
       run: |
-        export CLEARML_API_KEY=${{ secrets.CLEARML_API_KEY }}
         python3 ml-pipeline.py
