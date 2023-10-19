@@ -11,7 +11,9 @@ jobs:
   train:
     runs-on: ubuntu-latest
     env:
-      CLEARML_API_KEY: ${{ secrets.CLEARML_API_KEY }}
+        CLEARML_API_ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
+        CLEARML_API_SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        CLEARML_API_HOST: ${{ secrets.CLEARML_API_HOST }}
 
     steps:
     - name: Checkout code
