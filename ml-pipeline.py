@@ -26,6 +26,7 @@ def data_preparation():
     
     return X_train, y_train
 
+
 @PipelineDecorator.component(cache=True, execution_queue="default")
 def model_training(X_train, y_train):
     import tensorflow as tf
@@ -50,9 +51,9 @@ def model_training(X_train, y_train):
     task = Task.current_task()
     model_artifact = task.upload_artifact(name="LSTM_model", artifact_object=regressior)
     
-    # Log training loss as an example
+    # Log training loss using the correct method
     for epoch, loss in enumerate(history.history['loss']):
-        task.log_scalar('Training Loss', value=loss, iteration=epoch)
+        task.get_logger().report_scalar(title='Training Loss', series='Loss', value=loss, iteration=epoch)
     
     return history
 
