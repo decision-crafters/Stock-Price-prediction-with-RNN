@@ -3,7 +3,7 @@ name: Train Model with ClearML
 on:
   push:
     branches:
-      - main  # or your default branch
+      - master  # or your default branch
 
 jobs:
   train:
@@ -20,9 +20,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
+        pip3 install -r requirements.txt
 
     - name: Train model with ClearML
       run: |
         export CLEARML_API_KEY=${{ secrets.CLEARML_API_KEY }}
-        python your_training_script.py
+        python3 ml-pipeline.py
