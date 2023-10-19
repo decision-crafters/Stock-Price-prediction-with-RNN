@@ -26,7 +26,6 @@ def data_preparation():
     
     return X_train, y_train
 
-
 @PipelineDecorator.component(cache=True, execution_queue="default")
 def model_training(X_train, y_train):
     import tensorflow as tf
@@ -47,9 +46,13 @@ def model_training(X_train, y_train):
     regressior.compile(optimizer='rmsprop', loss='mean_squared_error')
     history = regressior.fit(X_train, y_train, epochs=25, batch_size=64)
 
-    # After training, log the model to ClearML
+    # After training, save the model locally
+    model_path = "saved_model.h5"
+    regressior.save(model_path)
+
+    # Log the saved model to ClearML
     task = Task.current_task()
-    model_artifact = task.upload_artifact(name="LSTM_model", artifact_object=regressior)
+    task.upload_artifact(name="LSTM_model", artifact_object=model_path)
     
     # Log training loss using the correct method
     for epoch, loss in enumerate(history.history['loss']):
