@@ -7,16 +7,18 @@ from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, LSTM, Dropout
 from clearml import Task
 from alpha_vantage.timeseries import TimeSeries
-import os 
+import os
 
 def data_preparation(api_key: str, stock: str) -> Task.id:
     task = Task.init(project_name='My Project', task_name='Data Preparation')
     
     # Load the training data
     ts = TimeSeries(key=api_key, output_format='pandas')
-    data, meta_data = ts.get_daily(symbol=stock, outputsize='full')  # Unpack the tuple into data and meta_data
+    data, meta_data = ts.get_daily(symbol=stock, outputsize='full')
+    
+    # Unpack the tuple into data and meta_data
     data.to_csv('dataset.csv')
-
+    
     # Preprocess the data
     df = pd.read_csv('dataset.csv')
     days = 180
@@ -25,7 +27,6 @@ def data_preparation(api_key: str, stock: str) -> Task.id:
     data_training = data_training.drop('date', axis=1)
     scaler = MinMaxScaler(feature_range=(0,1))
     data_training = scaler.fit_transform(data_training)
-
     X_train = []
     y_train = []
     for i, row in enumerate(data_training):
@@ -40,7 +41,7 @@ def data_preparation(api_key: str, stock: str) -> Task.id:
     task.upload_artifact('X_train', 'X_train.npy')
     task.upload_artifact('y_train', 'y_train.npy')
     task.close()
-    return task.id  # Return the task_id from data_preparation
+    return task.id # Return the task_id from data_preparation
 
 def model_training(stock: str) -> Task.id:
     task = Task.init(project_name='My Project', task_name=str(stock)+' Training')
@@ -69,41 +70,28 @@ def model_training(stock: str) -> Task.id:
     task.close()
 
 def evaluation(data_prep_task_id: Task.id, model: tf.keras.Model) -> None:
-    
     # Load trained model and test data
     task = Task.get_task(task_id=data_prep_task_id)
-    #stock = os.environ.get("STOCK", "GOOG")
-
-    # Download the model artifact to a local path
-    #model_artifact = task.artifacts[stock+'_model']
-    #local_path = model_artifact.get_local_copy()
-    
-    # Load the model from the local path
-    #model = tf.keras.models.load_model(local_path)
     X_train = np.load(task.artifacts['X_train'].get())
     y_train = np.load(task.artifacts['y_train'].get())
     
     # Evaluate the model and generate a report
     train_score = model.evaluate(X_train, y_train)
-    loss = train_score  # Assuming loss is the MSE for simplicity
-    accuracy = None  # Placeholder, as accuracy isn't provided in the original code
+    loss = train_score # Assuming loss is the MSE for simplicity
+    accuracy = None # Placeholder, as accuracy isn't provided in the original code
     
     # Assuming you have a method to create and send a report (this part might need adjustments)
-    report = task.create_report()
+    report = task.get_report()
     report.add_metric('score', train_score, data_type=float)
     report.add_metric('loss', loss, data_type=float)
     report.add_metric('accuracy', accuracy, data_type=float)
     report.send()
-    
     task.close()
-
-
 
 if __name__ == "__main__":
     API_KEY = os.environ.get("API_KEY", "changeme")
-    stock = os.environ.get("STOCK", "GOOG") 
-    data_prep_task_id = data_preparation(api_key=API_KEY, stock=stock)  # Capture the task_id from data_preparation
-    model_training(stock=stock)  # Pass the stock to model_training
-    #model = tf.keras.models.load_model(str(stock)+'_model.h5')  # Load the trained model
-    model = tf.keras.models.load_model("/home/runner/work/Stock-Price-prediction-with-RNN/Stock-Price-prediction-with-RNN/GOOG_model.h5")
-    evaluation(data_prep_task_id, model)  # Pass the task_id and model to evaluation
+    stock = os.environ.get("STOCK", "GOOG")
+    data_prep_task_id = data_preparation(api_key=API_KEY, stock=stock) # Capture the task_id from data_preparation
+    model_training(stock=stock) # Pass the stock to model_training
+    model = tf.keras.models.load_model(str(stock)+'_model.h5') # Load the trained model
+    evaluation(data_prep_task_id, model) # Pass the task_id and model to evaluation
