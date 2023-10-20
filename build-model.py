@@ -77,7 +77,9 @@ def evaluation(data_prep_task_id):
     stock = os.environ.get("STOCK", "GOOG")
 
     # Download the model artifact to a local path
-    local_path = task.download_artifact(stock+'_model')
+    model_artifact = task.artifacts[stock+'_model']
+    local_path = model_artifact.get_local_copy()
+    
     # Load the model from the local path
     model = tf.keras.models.load_model(local_path)
     X_train = np.load(task.artifacts['X_train'].get())
@@ -96,6 +98,7 @@ def evaluation(data_prep_task_id):
     report.send()
     
     task.close()
+
 
 
 if __name__ == "__main__":
