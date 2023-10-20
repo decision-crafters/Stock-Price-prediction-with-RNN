@@ -38,6 +38,7 @@ def model_training(X_train, y_train):
     import tensorflow as tf
     from tensorflow.keras import Sequential
     from tensorflow.keras.layers import Dense, LSTM, Dropout
+    import os
 
     # Define and train the model
     regressior = Sequential()
