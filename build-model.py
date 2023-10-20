@@ -71,13 +71,13 @@ def model_training():
     task.close()
 
 def evaluation(data_prep_task_id):
-    task = Task.get_task(task_id=data_prep_task_id)
     
     # Load trained model and test data
     task = Task.get_task(task_id=data_prep_task_id)
+    stock = os.environ.get("STOCK", "GOOG")
 
     # Download the model artifact to a local path
-    local_path = task.download_artifact('GOOG Training')
+    local_path = task.download_artifact(stock+'_model')
     # Load the model from the local path
     model = tf.keras.models.load_model(local_path)
     X_train = np.load(task.artifacts['X_train'].get())
