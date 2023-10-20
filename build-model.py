@@ -103,5 +103,6 @@ if __name__ == "__main__":
     API_KEY = os.environ.get("API_KEY", "changeme")
     stock = os.environ.get("STOCK", "GOOG") 
     data_prep_task_id = data_preparation(api_key=API_KEY, stock=stock)  # Capture the task_id from data_preparation
+    model_training(stock=stock)  # Pass the stock to model_training
     model = tf.keras.models.load_model(str(stock)+'_model.h5')  # Load the trained model
     evaluation(data_prep_task_id, model)  # Pass the task_id and model to evaluation
