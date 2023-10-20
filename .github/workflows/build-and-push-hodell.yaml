@@ -1,4 +1,4 @@
-name: Train Model with ClearML
+name: Build and Push Model
 
 on:
   push:
