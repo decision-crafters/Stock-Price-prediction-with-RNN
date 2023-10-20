@@ -44,7 +44,8 @@ def data_preparation():
     task.close()
 
 def model_training():
-    task = Task.init(project_name='My Project', task_name='Model Training')
+    stock = os.environ.get("STOCK", "GOOG")
+    task = Task.init(project_name='My Project', task_name=str(stock)+' Training')
     
     # Load preprocessed data
     # In data_preparation
@@ -70,7 +71,6 @@ def model_training():
     history = regressior.fit(X_train, y_train, epochs=25, batch_size=64)
     
     # Save the trained model
-    stock = os.environ.get("STOCK", "GOOG")
     regressior.save(str(stock)+'_model.h5')
     task.upload_artifact(stock+'_model', str(stock)+'_model.h5')
     task.close()
