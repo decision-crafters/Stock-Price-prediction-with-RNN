@@ -19,9 +19,8 @@ def data_preparation():
     data, meta_data = ts.get_daily(symbol=stock, outputsize='full')  # Unpack the tuple into data and meta_data
     data.to_csv('dataset.csv')
 
-    # Preprocess the datas
-    df = pd.read_csv('dataset.csv')
     # Preprocess the data
+    df = pd.read_csv('dataset.csv')
     days = 180
     df = df[::-1]
     data_training = df[df['date']<'2021-01-01'].copy()
@@ -42,17 +41,13 @@ def data_preparation():
     task.upload_artifact('X_train', 'X_train.npy')
     task.upload_artifact('y_train', 'y_train.npy')
     task.close()
+    return task.id  # Return the task_id from data_preparation
 
 def model_training():
     stock = os.environ.get("STOCK", "GOOG")
     task = Task.init(project_name='My Project', task_name=str(stock)+' Training')
     
     # Load preprocessed data
-    # In data_preparation
-    #np.save('X_train.npy', X_train)
-    #np.save('y_train.npy', y_train)
-
-    # In model_training
     X_train = np.load('X_train.npy')
     y_train = np.load('y_train.npy')
     
@@ -74,10 +69,9 @@ def model_training():
     regressior.save(str(stock)+'_model.h5')
     task.upload_artifact(stock+'_model', str(stock)+'_model.h5')
     task.close()
-    return task.id  # Return the task_id
 
-def evaluation(training_task_id):
-    task = Task.get_task(task_id=training_task_id)
+def evaluation(data_prep_task_id):
+    task = Task.get_task(task_id=data_prep_task_id)
     stock = os.environ.get("STOCK", "GOOG")  # Ensure stock is defined
     
     # Load trained model and test data
@@ -97,11 +91,7 @@ def evaluation(training_task_id):
     
     task.close()
 
-
-
 if __name__ == "__main__":
-    data_preparation()
-    training_task_id = model_training()  # Capture the task_id
-    evaluation(training_task_id)
-    model_training()
-    evaluation()
+    data_prep_task_id = data_preparation()  # Capture the task_id from data_preparation
+    model_training()  # No need to capture task_id here
+    evaluation(data_prep_task_id)  # Pass the task_id from data_preparation to evaluation
