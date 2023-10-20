@@ -74,10 +74,12 @@ def model_training():
     regressior.save(str(stock)+'_model.h5')
     task.upload_artifact(stock+'_model', str(stock)+'_model.h5')
     task.close()
+    return task.id  # Return the task_id
 
-def evaluation():
-    stock = os.environ.get("STOCK", "GOOG")
-    task = Task.init(project_name='My Project', task_name='Evaluation')
+def evaluation(training_task_id):
+    task = Task.get_task(task_id=training_task_id)
+    #stock = os.environ.get("STOCK", "GOOG")
+    #task = Task.init(project_name='My Project', task_name='Evaluation')
     
     # Load trained model and test data
     model = tf.keras.models.load_model(task.artifacts[stock+'_model'].get())
@@ -99,5 +101,7 @@ def evaluation():
 
 if __name__ == "__main__":
     data_preparation()
+    training_task_id = model_training()  # Capture the task_id
+    evaluation(training_task_id)
     model_training()
     evaluation()
