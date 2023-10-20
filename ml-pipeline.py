@@ -5,9 +5,16 @@ def data_preparation():
     import pandas as pd
     from sklearn.preprocessing import MinMaxScaler
     import numpy as np
+    from alpha_vantage.timeseries import TimeSeries
+    import os 
 
     # Load the training data
-    df = pd.read_csv('dataset.csv')
+    # Load the training data
+    API_KEY= os.environ.get("API_KEY", "changeme")
+    stock = os.environ.get("STOCK", "GOOG")
+	ts = TimeSeries(key=API_KEY, output_format='pandas')
+	data, meta_data = ts.get_daily(symbol=stock, outputsize='full')
+	data.to_csv('dataset.csv')
     
     # Preprocess the data
     days = 180
@@ -47,12 +54,13 @@ def model_training(X_train, y_train):
     history = regressior.fit(X_train, y_train, epochs=25, batch_size=64)
 
     # After training, save the model locally
-    model_path = "saved_model.h5"
+    stock = os.environ.get("STOCK", "GOOG")
+    model_path = str(stock)+"_model.h5"
     regressior.save(model_path)
 
     # Log the saved model to ClearML
     task = Task.current_task()
-    task.upload_artifact(name="lets-test-this", artifact_object=model_path)
+    task.upload_artifact(name=str(stock)+"model", artifact_object=model_path)
     
     # Log training loss using the correct method
     for epoch, loss in enumerate(history.history['loss']):
