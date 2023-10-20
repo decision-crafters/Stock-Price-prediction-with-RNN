@@ -18,6 +18,8 @@ def data_preparation():
     data.to_csv('dataset.csv')
 
     # Preprocess the datas
+    df = pd.read_csv('dataset.csv')
+
     days = 180
     df = df[::-1]
     data_training = df[df['date']<'2021-01-01'].copy()
