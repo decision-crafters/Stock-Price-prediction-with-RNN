@@ -74,7 +74,12 @@ def evaluation(data_prep_task_id):
     task = Task.get_task(task_id=data_prep_task_id)
     
     # Load trained model and test data
-    model = tf.keras.models.load_model(task.artifacts['GOOG Training'].get())
+    task = Task.get_task(task_id=data_prep_task_id)
+
+    # Download the model artifact to a local path
+    local_path = task.download_artifact('GOOG Training')
+    # Load the model from the local path
+    model = tf.keras.models.load_model(local_path)
     X_train = np.load(task.artifacts['X_train'].get())
     y_train = np.load(task.artifacts['y_train'].get())
     
