@@ -14,7 +14,7 @@ def data_preparation():
     stock = os.environ.get("STOCK", "GOOG") 
     ts = TimeSeries(key=API_KEY, output_format='pandas')
     data = ts.get_daily(symbol=stock, outputsize='full')
-	data.to_csv('dataset.csv')
+    data.to_csv('dataset.csv')
 
     # Preprocess the data
     days = 180
