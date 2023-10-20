@@ -10,12 +10,12 @@ def data_preparation():
 
     # Load the training data
     # Load the training data
-    API_KEY= os.environ.get("API_KEY", "changeme")
-    stock = os.environ.get("STOCK", "GOOG")
-	ts = TimeSeries(key=API_KEY, output_format='pandas')
-	data, meta_data = ts.get_daily(symbol=stock, outputsize='full')
+    API_KEY = os.environ.get("API_KEY", "changeme")
+    stock = os.environ.get("STOCK", "GOOG") 
+    ts = TimeSeries(key=API_KEY, output_format='pandas')
+    data = ts.get_daily(symbol=stock, outputsize='full')
 	data.to_csv('dataset.csv')
-    
+
     # Preprocess the data
     days = 180
     df = df[::-1]
