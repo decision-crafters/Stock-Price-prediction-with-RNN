@@ -81,7 +81,7 @@ def evaluation(training_task_id):
     stock = os.environ.get("STOCK", "GOOG")  # Ensure stock is defined
     
     # Load trained model and test data
-    model = tf.keras.models.load_model(task.artifacts[stock+'_model'].get())
+    model = tf.keras.models.load_model(task.artifacts[str(stock)+'_model'].get())
     X_train = np.load(task.artifacts['X_train'].get())
     y_train = np.load(task.artifacts['y_train'].get())
     
