@@ -81,7 +81,7 @@ def evaluation(data_prep_task_id: Task.id, model: tf.keras.Model) -> None:
     accuracy = None # Placeholder, as accuracy isn't provided in the original code
     
     # Assuming you have a method to create and send a report (this part might need adjustments)
-    report = task.get_report()
+    report = task.set_repo()
     report.add_metric('score', train_score, data_type=float)
     report.add_metric('loss', loss, data_type=float)
     report.add_metric('accuracy', accuracy, data_type=float)
