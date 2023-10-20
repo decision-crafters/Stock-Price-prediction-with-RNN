@@ -43,7 +43,7 @@ def data_preparation(api_key: str, stock: str) -> Task.id:
     task.close()
     return task.id # Return the task_id from data_preparation
 
-def model_training(stock: str) -> Task.id:
+def model_training(stock: str) -> Tuple[Task.id, tf.keras.callbacks.History]:
     task = Task.init(project_name='My Project', task_name=str(stock)+' Training')
     
     # Load preprocessed data
@@ -68,8 +68,10 @@ def model_training(stock: str) -> Task.id:
     regressior.save(str(stock)+'_model.h5')
     task.upload_artifact(stock+'_model', str(stock)+'_model.h5')
     task.close()
+    
+    return task.id, history
 
-def evaluation(data_prep_task_id: Task.id, model: tf.keras.Model) -> None:
+def evaluation(data_prep_task_id: Task.id, model: tf.keras.Model, history: tf.keras.callbacks.History) -> None:
     # Load trained model and test data
     task = Task.get_task(task_id=data_prep_task_id)
     X_train = np.load(task.artifacts['X_train'].get())
@@ -80,18 +82,16 @@ def evaluation(data_prep_task_id: Task.id, model: tf.keras.Model) -> None:
     loss = train_score # Assuming loss is the MSE for simplicity
     accuracy = None # Placeholder, as accuracy isn't provided in the original code
     
-    # Assuming you have a method to create and send a report (this part might need adjustments)
-    report = task.set_report()
-    report.add_metric('score', train_score, data_type=float)
-    report.add_metric('loss', loss, data_type=float)
-    report.add_metric('accuracy', accuracy, data_type=float)
-    report.send()
+    # Report the training loss for each epoch
+    for epoch, loss in enumerate(history.history['loss']):
+        task.get_logger().report_scalar(title='Training Loss', series='Loss', value=loss, iteration=epoch)
+    
     task.close()
 
 if __name__ == "__main__":
     API_KEY = os.environ.get("API_KEY", "changeme")
     stock = os.environ.get("STOCK", "GOOG")
     data_prep_task_id = data_preparation(api_key=API_KEY, stock=stock) # Capture the task_id from data_preparation
-    model_training(stock=stock) # Pass the stock to model_training
+    data = model_training(stock=stock) # Pass the stock to model_training
     model = tf.keras.models.load_model(str(stock)+'_model.h5') # Load the trained model
-    evaluation(data_prep_task_id, model) # Pass the task_id and model to evaluation
+    evaluation(data_prep_task_id, model, data[1]) # Pass the task_id, model, and history to evaluation
