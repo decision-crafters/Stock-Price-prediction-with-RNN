@@ -8,15 +8,16 @@ def data_preparation():
     from alpha_vantage.timeseries import TimeSeries
     import os 
 
+
     # Load the training data
     # Load the training data
     API_KEY = os.environ.get("API_KEY", "changeme")
     stock = os.environ.get("STOCK", "GOOG") 
     ts = TimeSeries(key=API_KEY, output_format='pandas')
-    data = ts.get_daily(symbol=stock, outputsize='full')
+    data, meta_data = ts.get_daily(symbol=stock, outputsize='full')  # Unpack the tuple into data and meta_data
     data.to_csv('dataset.csv')
 
-    # Preprocess the data
+    # Preprocess the datas
     days = 180
     df = df[::-1]
     data_training = df[df['date']<'2021-01-01'].copy()
