@@ -9,13 +9,11 @@ from clearml import Task
 from alpha_vantage.timeseries import TimeSeries
 import os 
 
-def data_preparation():
+def data_preparation(api_key: str, stock: str) -> Task.id:
     task = Task.init(project_name='My Project', task_name='Data Preparation')
     
     # Load the training data
-    API_KEY = os.environ.get("API_KEY", "changeme")
-    stock = os.environ.get("STOCK", "GOOG") 
-    ts = TimeSeries(key=API_KEY, output_format='pandas')
+    ts = TimeSeries(key=api_key, output_format='pandas')
     data, meta_data = ts.get_daily(symbol=stock, outputsize='full')  # Unpack the tuple into data and meta_data
     data.to_csv('dataset.csv')
 
@@ -30,9 +28,10 @@ def data_preparation():
 
     X_train = []
     y_train = []
-    for i in range(days, data_training.shape[0]):
-        X_train.append(data_training[i-days:i])
-        y_train.append(data_training[i, 0])
+    for i, row in enumerate(data_training):
+        if i >= days:
+            X_train.append(data_training[i-days:i])
+            y_train.append(data_training[i, 0])
     X_train, y_train = np.array(X_train), np.array(y_train)
     
     # Save the preprocessed data
@@ -43,8 +42,7 @@ def data_preparation():
     task.close()
     return task.id  # Return the task_id from data_preparation
 
-def model_training():
-    stock = os.environ.get("STOCK", "GOOG")
+def model_training(stock: str) -> Task.id:
     task = Task.init(project_name='My Project', task_name=str(stock)+' Training')
     
     # Load preprocessed data
@@ -53,13 +51,13 @@ def model_training():
     
     # Define and train the model
     regressior = Sequential()
-    regressior.add(LSTM(units = 100, activation = 'relu', return_sequences = True, input_shape = (X_train.shape[1], 5)))
+    regressior.add(LSTM(units = 100, activation = 'relu', return_sequences = True, input_shape = (X_train.shape[1], 5), kernel_regularizer=tf.keras.regularizers.l2(0.001)))
     regressior.add(Dropout(0.2))
-    regressior.add(LSTM(units = 100, activation = 'relu', return_sequences = True))
+    regressior.add(LSTM(units = 100, activation = 'relu', return_sequences = True, kernel_regularizer=tf.keras.regularizers.l2(0.001)))
     regressior.add(Dropout(0.2))
-    regressior.add(LSTM(units = 100, activation = 'relu', return_sequences = True))
+    regressior.add(LSTM(units = 100, activation = 'relu', return_sequences = True, kernel_regularizer=tf.keras.regularizers.l2(0.001)))
     regressior.add(Dropout(0.2))
-    regressior.add(LSTM(units = 100, activation = 'relu'))
+    regressior.add(LSTM(units = 100, activation = 'relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)))
     regressior.add(Dropout(0.2))
     regressior.add(Dense(units = 1))
     regressior.compile(optimizer='rmsprop', loss='mean_squared_error')
@@ -70,7 +68,7 @@ def model_training():
     task.upload_artifact(stock+'_model', str(stock)+'_model.h5')
     task.close()
 
-def evaluation(data_prep_task_id):
+def evaluation(data_prep_task_id: Task.id, model: tf.keras.Model) -> None:
     
     # Load trained model and test data
     task = Task.get_task(task_id=data_prep_task_id)
@@ -86,15 +84,15 @@ def evaluation(data_prep_task_id):
     y_train = np.load(task.artifacts['y_train'].get())
     
     # Evaluate the model and generate a report
-    train_score = mean_squared_error(y_train, model.predict(X_train))
+    train_score = model.evaluate(X_train, y_true=y_train)
     loss = train_score  # Assuming loss is the MSE for simplicity
     accuracy = None  # Placeholder, as accuracy isn't provided in the original code
     
     # Assuming you have a method to create and send a report (this part might need adjustments)
     report = task.create_report()
-    report.add_metric('score', train_score)
-    report.add_metric('loss', loss)
-    report.add_metric('accuracy', accuracy)
+    report.add_metric('score', train_score, data_type=float)
+    report.add_metric('loss', loss, data_type=float)
+    report.add_metric('accuracy', accuracy, data_type=float)
     report.send()
     
     task.close()
@@ -102,6 +100,8 @@ def evaluation(data_prep_task_id):
 
 
 if __name__ == "__main__":
-    data_prep_task_id = data_preparation()  # Capture the task_id from data_preparation
-    model_training()  # No need to capture task_id here
-    evaluation(data_prep_task_id)  # Pass the task_id from data_preparation to evaluation
+    API_KEY = os.environ.get("API_KEY", "changeme")
+    stock = os.environ.get("STOCK", "GOOG") 
+    data_prep_task_id = data_preparation(api_key=API_KEY, stock=stock)  # Capture the task_id from data_preparation
+    model = tf.keras.models.load_model(str(stock)+'_model.h5')  # Load the trained model
+    evaluation(data_prep_task_id, model)  # Pass the task_id and model to evaluation
