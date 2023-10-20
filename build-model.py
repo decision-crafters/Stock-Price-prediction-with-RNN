@@ -84,7 +84,7 @@ def evaluation(data_prep_task_id: Task.id, model: tf.keras.Model) -> None:
     y_train = np.load(task.artifacts['y_train'].get())
     
     # Evaluate the model and generate a report
-    train_score = model.evaluate(X_train, y_true=y_train)
+    train_score = model.evaluate(X_train, y_train)
     loss = train_score  # Assuming loss is the MSE for simplicity
     accuracy = None  # Placeholder, as accuracy isn't provided in the original code
     
