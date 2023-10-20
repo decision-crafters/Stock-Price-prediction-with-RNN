@@ -72,14 +72,14 @@ def evaluation(data_prep_task_id: Task.id, model: tf.keras.Model) -> None:
     
     # Load trained model and test data
     task = Task.get_task(task_id=data_prep_task_id)
-    stock = os.environ.get("STOCK", "GOOG")
+    #stock = os.environ.get("STOCK", "GOOG")
 
     # Download the model artifact to a local path
-    model_artifact = task.artifacts[stock+'_model']
-    local_path = model_artifact.get_local_copy()
+    #model_artifact = task.artifacts[stock+'_model']
+    #local_path = model_artifact.get_local_copy()
     
     # Load the model from the local path
-    model = tf.keras.models.load_model(local_path)
+    #model = tf.keras.models.load_model(local_path)
     X_train = np.load(task.artifacts['X_train'].get())
     y_train = np.load(task.artifacts['y_train'].get())
     
@@ -104,5 +104,6 @@ if __name__ == "__main__":
     stock = os.environ.get("STOCK", "GOOG") 
     data_prep_task_id = data_preparation(api_key=API_KEY, stock=stock)  # Capture the task_id from data_preparation
     model_training(stock=stock)  # Pass the stock to model_training
-    model = tf.keras.models.load_model(str(stock)+'_model.h5')  # Load the trained model
+    #model = tf.keras.models.load_model(str(stock)+'_model.h5')  # Load the trained model
+    model = tf.keras.models.load_model("/home/runner/work/Stock-Price-prediction-with-RNN/Stock-Price-prediction-with-RNN/GOOG_model.h5")
     evaluation(data_prep_task_id, model)  # Pass the task_id and model to evaluation
