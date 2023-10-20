@@ -76,10 +76,11 @@ def model_training():
     task.close()
 
 def evaluation():
+    stock = os.environ.get("STOCK", "GOOG")
     task = Task.init(project_name='My Project', task_name='Evaluation')
     
     # Load trained model and test data
-    model = tf.keras.models.load_model(task.artifacts['trained_model'].get())
+    model = tf.keras.models.load_model(task.artifacts[stock+'_model'].get())
     X_train = np.load(task.artifacts['X_train'].get())
     y_train = np.load(task.artifacts['y_train'].get())
     
@@ -94,6 +95,7 @@ def evaluation():
     report.send()
     
     task.close()
+
 
 if __name__ == "__main__":
     data_preparation()
