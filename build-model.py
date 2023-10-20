@@ -72,10 +72,9 @@ def model_training():
 
 def evaluation(data_prep_task_id):
     task = Task.get_task(task_id=data_prep_task_id)
-    stock = os.environ.get("STOCK", "GOOG")  # Ensure stock is defined
     
     # Load trained model and test data
-    model = tf.keras.models.load_model(task.artifacts[str(stock)+'_model'].get())
+    model = tf.keras.models.load_model(task.artifacts['GOOG Training'].get())
     X_train = np.load(task.artifacts['X_train'].get())
     y_train = np.load(task.artifacts['y_train'].get())
     
@@ -83,6 +82,8 @@ def evaluation(data_prep_task_id):
     train_score = mean_squared_error(y_train, model.predict(X_train))
     loss = train_score  # Assuming loss is the MSE for simplicity
     accuracy = None  # Placeholder, as accuracy isn't provided in the original code
+    
+    # Assuming you have a method to create and send a report (this part might need adjustments)
     report = task.create_report()
     report.add_metric('score', train_score)
     report.add_metric('loss', loss)
@@ -90,6 +91,7 @@ def evaluation(data_prep_task_id):
     report.send()
     
     task.close()
+
 
 if __name__ == "__main__":
     data_prep_task_id = data_preparation()  # Capture the task_id from data_preparation
