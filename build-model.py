@@ -78,8 +78,7 @@ def model_training():
 
 def evaluation(training_task_id):
     task = Task.get_task(task_id=training_task_id)
-    #stock = os.environ.get("STOCK", "GOOG")
-    #task = Task.init(project_name='My Project', task_name='Evaluation')
+    stock = os.environ.get("STOCK", "GOOG")  # Ensure stock is defined
     
     # Load trained model and test data
     model = tf.keras.models.load_model(task.artifacts[stock+'_model'].get())
@@ -97,6 +96,7 @@ def evaluation(training_task_id):
     report.send()
     
     task.close()
+
 
 
 if __name__ == "__main__":
