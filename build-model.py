@@ -81,7 +81,7 @@ def model_training(stock: str) -> Task.id:
     mse = mean_squared_error(y_train, y_pred)
     task.get_logger().report_scalar(title='Prediction Accuracy', series='MSE', value=mse, iteration=epoch)
     
-    # Preprocess the data
+    # Preprocess the data for testing
     df = pd.read_csv('dataset.csv')
     days = 180
     df = df[::-1]
@@ -99,9 +99,10 @@ def model_training(stock: str) -> Task.id:
 
     # Make predictions
     y_pred = model.predict(X_test)
+    y_pred_original_scale = scaler.inverse_transform(y_pred) # Inverse transform the predicted prices
 
     # Generate a graph of the price prediction
-    plt.plot(y_pred)
+    plt.plot(y_pred_original_scale)
     plt.xlabel('Day')
     plt.ylabel('Predicted Price')
     plt.title('Price Prediction for ' + stock)
