@@ -108,6 +108,14 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     actual_prices = df[df['date']>'2023-01-01']['close'].values[-len(y_pred_original_scale):]
     dates = df[df['date']>'2023-01-01']['date'].values[-len(y_pred_original_scale):]
 
+    # Calculate price difference and percentage difference
+    price_difference = y_pred_original_scale - actual_prices
+    percentage_difference = (price_difference / actual_prices) * 100
+
+    # Print the last day's differences
+    print(f"Price difference for the last date: {price_difference[-1]}")
+    print(f"Percentage difference for the last date: {percentage_difference[-1]}%")
+
     # Generate a graph of the price prediction
     plt.figure(figsize=(14, 7))
     plt.plot(dates, y_pred_original_scale, label='Predicted Prices', color='blue')
@@ -116,11 +124,23 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     plt.ylabel('Price')
     plt.title('Price Prediction for ' + stock)
     plt.legend()
-    plt.xticks(dates[::10], rotation=45)  # Adjust for clarity. Display every 10th date and rotate labels for readability
+    plt.xticks(dates[::10], rotation=45)
     plt.tight_layout()
     plt.savefig('price_prediction.png')
-    
     task.upload_artifact('price_prediction', 'price_prediction.png')
+
+    # Generate a graph of percentage difference
+    plt.figure(figsize=(14, 7))
+    plt.plot(dates, percentage_difference, label='Percentage Difference', color='green')
+    plt.xlabel('Date')
+    plt.ylabel('Percentage Difference')
+    plt.title('Percentage Difference for ' + stock)
+    plt.axhline(0, color='red', linestyle='dashed')
+    plt.xticks(dates[::10], rotation=45)
+    plt.tight_layout()
+    plt.savefig('percentage_difference.png')
+    task.upload_artifact('percentage_difference', 'percentage_difference.png')
+
 
     
     task.close()
