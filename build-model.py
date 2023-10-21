@@ -168,6 +168,10 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     task.upload_artifact('percentage_difference', 'percentage_difference.png')
 
     task.close()
+    # Check if percentage difference is above a certain threshold
+    threshold = 5  # Adjust this value as per your requirement
+    if abs(percentage_difference[-1]) > threshold:
+        raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
 
 if __name__ == "__main__":
     API_KEY = os.environ.get("API_KEY", "changeme")
