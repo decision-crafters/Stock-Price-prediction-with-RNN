@@ -67,15 +67,15 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     regressior = Sequential()
 
     # First LSTM layer
-    regressior.add(LSTM(units=25, return_sequences=True, input_shape=(X_train.shape[1], 5)))
+    regressior.add(LSTM(units=200, return_sequences=True, input_shape=(X_train.shape[1], 5)))
     regressior.add(Dropout(0.2))
 
     # Second LSTM layer
-    regressior.add(LSTM(units=25, return_sequences=True))
+    regressior.add(LSTM(units=200, return_sequences=True))
     regressior.add(Dropout(0.2))
 
     # Third LSTM layer
-    regressior.add(LSTM(units=25))
+    regressior.add(LSTM(units=200))
     regressior.add(Dropout(0.2))
 
     # Output layer
@@ -92,7 +92,7 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     history = regressior.fit(
         X_train, y_train, 
         epochs=75, 
-        batch_size=32,
+        batch_size=128,
         validation_data=(X_val, y_val),
         callbacks=[early_stopping]
     )
@@ -136,7 +136,7 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
 
     # Calculate price difference and percentage difference
     price_difference = y_pred_original_scale - actual_prices
-    percentage_difference = (price_difference / actual_prices) * 25
+    percentage_difference = (price_difference / actual_prices) * 200
 
     # Print the last day's differences
     print(f"Price difference for the last date: {price_difference[-1]}")
