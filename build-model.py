@@ -136,7 +136,7 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
 
     # Calculate price difference and percentage difference
     price_difference = y_pred_original_scale - actual_prices
-    percentage_difference = (price_difference / actual_prices) * 200
+    percentage_difference = (price_difference / actual_prices) * 100
 
     # Print the last day's differences
     print(f"Price difference for the last date: {price_difference[-1]}")
