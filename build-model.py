@@ -52,6 +52,7 @@ def data_preparation(api_key: str, stock: str) -> (Task.id, tuple):
     task.upload_artifact('y_train', 'y_train.npy')
     
     task.close()
+    print("Training data shape:", data_training.shape)
     return task.id, data_training.shape
 
 def model_training(stock: str, training_data_shape: tuple) -> Task.id:
@@ -70,6 +71,7 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
 
     # Define and train the model
     regressior = Sequential()
+
 
     # First LSTM layer
     units_1 = int(os.environ.get('LSTM_UNITS_1', 10))
