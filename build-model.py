@@ -76,10 +76,34 @@ def model_training(stock: str) -> Task.id:
     y_pred = regressior.predict(X_train)
     mse = mean_squared_error(y_train, y_pred)
     print('Mean squared error:', mse)
+    # Report the model's prediction accuracy to ClearML dashboard
+    task.get_logger().report_scalar(title='Prediction Accuracy', series='MSE', value=mse, iteration=epoch)
 
 
-    # Save the model's predictions
-    np.save('y_pred.npy', y_pred)
+
+    # Load the model
+    model = tf.keras.models.load_model('GOOG_model.h5')
+
+    # Preprocess the data
+    df = pd.read_csv('dataset.csv')
+    days = 180
+    df = df[::-1]
+    data_test = df[df['date']>'2023-01-01'].copy()
+    data_test = data_test.drop('date', axis=1)
+    scaler = MinMaxScaler(feature_range=(0,1))
+    data_test = scaler.transform(data_test)
+    X_test = []
+    for i, row in enumerate(data_test):
+        if i >= days:
+            X_test.append(data_test[i-days:i])
+    X_test = np.array(X_test)
+
+    # Make predictions
+    y_pred = model.predict(X_test)
+
+    # Print the predictions
+    for i in range(len(y_pred)):
+        print('Predicted price for day', i + days + 1, ':', y_pred[i][0])
 
     # Generate a graph of the price prediction
     plt.plot(y_pred)
@@ -92,8 +116,6 @@ def model_training(stock: str) -> Task.id:
     task = Task.init(project_name='My Project', task_name='Upload PNG')
     task.upload_artifact('price_prediction', 'price_prediction.png')
 
-    # Report the model's prediction accuracy to ClearML dashboard
-    task.get_logger().report_scalar(title='Prediction Accuracy', series='MSE', value=mse, iteration=epoch)
 
     task.close()
 
