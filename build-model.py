@@ -8,6 +8,7 @@ from tensorflow.keras.layers import Dense, LSTM, Dropout
 from clearml import Task
 from alpha_vantage.timeseries import TimeSeries
 import os
+import matplotlib.pyplot as plt
 
 def data_preparation(api_key: str, stock: str) -> Task.id:
     task = Task.init(project_name='My Project', task_name='Data Preparation')
@@ -23,7 +24,7 @@ def data_preparation(api_key: str, stock: str) -> Task.id:
     df = pd.read_csv('dataset.csv')
     days = 180
     df = df[::-1]
-    data_training = df[df['date']<'2021-01-01'].copy()
+    data_training = df[df['date']<'2023-01-01'].copy()
     data_training = data_training.drop('date', axis=1)
     scaler = MinMaxScaler(feature_range=(0,1))
     data_training = scaler.fit_transform(data_training)
@@ -71,6 +72,29 @@ def model_training(stock: str) -> Task.id:
     print(history.history)
     for epoch, loss in enumerate(history.history['loss']):
         task.get_logger().report_scalar(title='Training Loss', series='Loss', value=loss, iteration=epoch)
+        # Evaluate the model on the training data
+    y_pred = regressior.predict(X_train)
+    mse = mean_squared_error(y_train, y_pred)
+    print('Mean squared error:', mse)
+
+
+    # Save the model's predictions
+    np.save('y_pred.npy', y_pred)
+
+    # Generate a graph of the price prediction
+    plt.plot(y_pred)
+    plt.xlabel('Day')
+    plt.ylabel('Predicted Price')
+    plt.title('Price Prediction for ' + stock)
+    plt.savefig('price_prediction.png')
+
+    # Upload the PNG file to ClearML as an artifact
+    task = Task.init(project_name='My Project', task_name='Upload PNG')
+    task.upload_artifact('price_prediction', 'price_prediction.png')
+
+    # Report the model's prediction accuracy to ClearML dashboard
+    task.get_logger().report_scalar(title='Prediction Accuracy', series='MSE', value=mse, iteration=epoch)
+
     task.close()
 
 
