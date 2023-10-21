@@ -75,7 +75,7 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
 
     # First LSTM layer
     units_1 = int(os.environ.get('LSTM_UNITS_1', 10))
-    regressior.add(LSTM(units=units_1, return_sequences=True, input_shape=(X_train.shape[1], 6)))
+    regressior.add(LSTM(units=units_1, return_sequences=True, input_shape=(X_train.shape[1], 7)))
     regressior.add(Dropout(0.2))
 
     # Second LSTM layer
