@@ -75,7 +75,7 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     regressior.add(Dropout(0.2))
 
     # Third LSTM layer
-    regressior.add(LSTM(units=20))
+    regressior.add(LSTM(units=10))
     regressior.add(Dropout(0.2))
 
     # Output layer
