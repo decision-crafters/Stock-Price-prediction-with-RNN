@@ -86,12 +86,12 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     days = 180
     df = df[::-1]
     data_test = df[df['date']>'2023-01-01'].copy()
-    data_test = data_test.drop('date', axis=1)
-    data_test = scaler.transform(data_test)
+    data_test_scaled = data_test.drop('date', axis=1)
+    data_test_scaled = scaler.transform(data_test_scaled)
     X_test = []
-    for i, row in enumerate(data_test):
+    for i, row in enumerate(data_test_scaled):
         if i >= days:
-            X_test.append(data_test[i-days:i])
+            X_test.append(data_test_scaled[i-days:i])
     X_test = np.array(X_test)
     
     # Load the model
@@ -104,14 +104,24 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     dummy_array[:,0] = y_pred[:,0]
     y_pred_original_scale = scaler.inverse_transform(dummy_array)[:,0]
 
+    # Extract actual prices and dates
+    actual_prices = df[df['date']>'2023-01-01']['close'].values[-len(y_pred_original_scale):]
+    dates = df[df['date']>'2023-01-01']['date'].values[-len(y_pred_original_scale):]
+
     # Generate a graph of the price prediction
-    plt.plot(y_pred_original_scale)
-    plt.xlabel('Day')
-    plt.ylabel('Predicted Price')
+    plt.figure(figsize=(14, 7))
+    plt.plot(dates, y_pred_original_scale, label='Predicted Prices', color='blue')
+    plt.plot(dates, actual_prices, label='Actual Prices', color='red', linestyle='dashed')
+    plt.xlabel('Date')
+    plt.ylabel('Price')
     plt.title('Price Prediction for ' + stock)
+    plt.legend()
+    plt.xticks(dates[::10], rotation=45)  # Adjust for clarity. Display every 10th date and rotate labels for readability
+    plt.tight_layout()
     plt.savefig('price_prediction.png')
     
     task.upload_artifact('price_prediction', 'price_prediction.png')
+
     
     task.close()
 
