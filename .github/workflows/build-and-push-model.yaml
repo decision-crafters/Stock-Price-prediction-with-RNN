@@ -1,10 +1,25 @@
 name: Build and Push Model
 
 on:
-  push:
-    branches:
-      - master  # or your default branch
-      
+  workflow_dispatch:
+    inputs:
+      stock:
+        description: 'Stock'
+        required: true
+        default: 'AAPL'
+      lstm_units_1:
+        description: 'lstm units 1'
+        required: true
+        default: 10
+      lstm_units_2:
+        description: 'lstm units 2'
+        required: true
+        default: 20
+      lstm_units_3:
+        description: 'lstm units 3'
+        required: true
+        default: 30
+
 jobs:
   train:
     runs-on: ubuntu-latest
@@ -12,6 +27,10 @@ jobs:
         CLEARML_API_ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
         CLEARML_API_SECRET_KEY: ${{ secrets.SECRET_KEY }}
         CLEARML_API_HOST: ${{ secrets.CLEARML_API_HOST }}
+        LSTM_UNITS_1: ${{ github.event.inputs.lstm_units_1 }}
+        LSTM_UNITS_2: ${{ github.event.inputs.lstm_units_2 }}
+        LSTM_UNITS_3: ${{ github.event.inputs.lstm_units_3 }}
+        STOCK: ${{ github.event.inputs.stock }}
 
     steps:
     - name: Checkout code
