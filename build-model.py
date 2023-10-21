@@ -11,7 +11,7 @@ import os
 import matplotlib.pyplot as plt
 import joblib
 
-def data_preparation(api_key: str, stock: str) -> Task.id:
+def data_preparation(api_key: str, stock: str) -> (Task.id, tuple):
     task = Task.init(project_name='My Project', task_name='Data Preparation')
     
     # Load the training data
@@ -47,9 +47,9 @@ def data_preparation(api_key: str, stock: str) -> Task.id:
     task.upload_artifact('y_train', 'y_train.npy')
     
     task.close()
-    return task.id
+    return task.id, data_training.shape
 
-def model_training(stock: str) -> Task.id:
+def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     task = Task.init(project_name='My Project', task_name=str(stock)+' Training')
     
     # Load preprocessed data
@@ -99,7 +99,10 @@ def model_training(stock: str) -> Task.id:
 
     # Make predictions
     y_pred = model.predict(X_test)
-    y_pred_original_scale = scaler.inverse_transform(y_pred) # Inverse transform the predicted prices
+    # Rescale the predictions to the original price scale
+    dummy_array = np.zeros(shape=(len(y_pred), training_data_shape[1]))
+    dummy_array[:,0] = y_pred[:,0]
+    y_pred_original_scale = scaler.inverse_transform(dummy_array)[:,0]
 
     # Generate a graph of the price prediction
     plt.plot(y_pred_original_scale)
@@ -115,5 +118,5 @@ def model_training(stock: str) -> Task.id:
 if __name__ == "__main__":
     API_KEY = os.environ.get("API_KEY", "changeme")
     stock = os.environ.get("STOCK", "GOOG")
-    data_preparation(api_key=API_KEY, stock=stock)
-    model_training(stock=stock)
+    task_id, training_data_shape = data_preparation(api_key=API_KEY, stock=stock)
+    model_training(stock=stock, training_data_shape=training_data_shape)
