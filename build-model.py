@@ -105,7 +105,7 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     y_pred_original_scale = scaler.inverse_transform(dummy_array)[:,0]
 
     # Extract actual prices and dates
-    actual_prices = df[df['date']>'2023-01-01']['close'].values[-len(y_pred_original_scale):]
+    actual_prices = df[df['date']>'2023-01-01']['4. close'].values[-len(y_pred_original_scale):]
     dates = df[df['date']>'2023-01-01']['date'].values[-len(y_pred_original_scale):]
 
     # Calculate price difference and percentage difference
@@ -141,8 +141,6 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     plt.savefig('percentage_difference.png')
     task.upload_artifact('percentage_difference', 'percentage_difference.png')
 
-
-    
     task.close()
 
 if __name__ == "__main__":
