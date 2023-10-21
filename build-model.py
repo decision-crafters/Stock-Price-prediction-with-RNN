@@ -91,8 +91,8 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     # Fit the model
     history = regressior.fit(
         X_train, y_train, 
-        epochs=50, 
-        batch_size=32,
+        epochs=100, 
+        batch_size=64,
         validation_data=(X_val, y_val),
         callbacks=[early_stopping]
     )
