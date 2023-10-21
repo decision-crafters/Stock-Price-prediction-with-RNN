@@ -9,6 +9,7 @@ from clearml import Task
 from alpha_vantage.timeseries import TimeSeries
 import os
 import matplotlib.pyplot as plt
+import joblib
 
 def data_preparation(api_key: str, stock: str) -> Task.id:
     task = Task.init(project_name='My Project', task_name='Data Preparation')
@@ -17,7 +18,6 @@ def data_preparation(api_key: str, stock: str) -> Task.id:
     ts = TimeSeries(key=api_key, output_format='pandas')
     data, meta_data = ts.get_daily(symbol=stock, outputsize='full')
     
-    # Unpack the tuple into data and meta_data
     data.to_csv('dataset.csv')
     
     # Preprocess the data
@@ -28,6 +28,11 @@ def data_preparation(api_key: str, stock: str) -> Task.id:
     data_training = data_training.drop('date', axis=1)
     scaler = MinMaxScaler(feature_range=(0,1))
     data_training = scaler.fit_transform(data_training)
+    
+    # Save the scaler for future use
+    joblib.dump(scaler, 'scaler.pkl')
+    task.upload_artifact('scaler', 'scaler.pkl')
+
     X_train = []
     y_train = []
     for i, row in enumerate(data_training):
@@ -36,13 +41,13 @@ def data_preparation(api_key: str, stock: str) -> Task.id:
             y_train.append(data_training[i, 0])
     X_train, y_train = np.array(X_train), np.array(y_train)
     
-    # Save the preprocessed data
     np.save('X_train.npy', X_train)
     np.save('y_train.npy', y_train)
     task.upload_artifact('X_train', 'X_train.npy')
     task.upload_artifact('y_train', 'y_train.npy')
+    
     task.close()
-    return task.id # Return the task_id from data_preparation
+    return task.id
 
 def model_training(stock: str) -> Task.id:
     task = Task.init(project_name='My Project', task_name=str(stock)+' Training')
@@ -50,6 +55,9 @@ def model_training(stock: str) -> Task.id:
     # Load preprocessed data
     X_train = np.load('X_train.npy')
     y_train = np.load('y_train.npy')
+
+    # Load the saved scaler
+    scaler = joblib.load('scaler.pkl')
     
     # Define and train the model
     regressior = Sequential()
@@ -65,45 +73,32 @@ def model_training(stock: str) -> Task.id:
     regressior.compile(optimizer='rmsprop', loss='mean_squared_error')
     history = regressior.fit(X_train, y_train, epochs=25, batch_size=64)
     
-    # Save the trained model
     regressior.save(str(stock)+'_model.h5')
     task.upload_artifact(stock+'_model', str(stock)+'_model.h5')
-    # Log training loss using the correct method
-    print(history.history)
     for epoch, loss in enumerate(history.history['loss']):
         task.get_logger().report_scalar(title='Training Loss', series='Loss', value=loss, iteration=epoch)
-        # Evaluate the model on the training data
     y_pred = regressior.predict(X_train)
     mse = mean_squared_error(y_train, y_pred)
-    print('Mean squared error:', mse)
-    # Report the model's prediction accuracy to ClearML dashboard
     task.get_logger().report_scalar(title='Prediction Accuracy', series='MSE', value=mse, iteration=epoch)
-
-
-
-    # Load the model
-    model = tf.keras.models.load_model('GOOG_model.h5')
-
+    
     # Preprocess the data
     df = pd.read_csv('dataset.csv')
     days = 180
     df = df[::-1]
     data_test = df[df['date']>'2023-01-01'].copy()
     data_test = data_test.drop('date', axis=1)
-    scaler = MinMaxScaler(feature_range=(0,1))
     data_test = scaler.transform(data_test)
     X_test = []
     for i, row in enumerate(data_test):
         if i >= days:
             X_test.append(data_test[i-days:i])
     X_test = np.array(X_test)
+    
+    # Load the model
+    model = tf.keras.models.load_model(str(stock)+'_model.h5')
 
     # Make predictions
     y_pred = model.predict(X_test)
-
-    # Print the predictions
-    for i in range(len(y_pred)):
-        print('Predicted price for day', i + days + 1, ':', y_pred[i][0])
 
     # Generate a graph of the price prediction
     plt.plot(y_pred)
@@ -111,18 +106,13 @@ def model_training(stock: str) -> Task.id:
     plt.ylabel('Predicted Price')
     plt.title('Price Prediction for ' + stock)
     plt.savefig('price_prediction.png')
-
-    # Upload the PNG file to ClearML as an artifact
-    task = Task.init(project_name='My Project', task_name='Upload PNG')
+    
     task.upload_artifact('price_prediction', 'price_prediction.png')
-
-
+    
     task.close()
-
-
 
 if __name__ == "__main__":
     API_KEY = os.environ.get("API_KEY", "changeme")
     stock = os.environ.get("STOCK", "GOOG")
-    data_prep_task_id = data_preparation(api_key=API_KEY, stock=stock) # Capture the task_id from data_preparation
-    model_training(stock=stock) # Pass the stock to model_training
+    data_preparation(api_key=API_KEY, stock=stock)
+    model_training(stock=stock)
