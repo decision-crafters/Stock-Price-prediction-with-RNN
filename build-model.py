@@ -56,24 +56,50 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     X_train = np.load('X_train.npy')
     y_train = np.load('y_train.npy')
 
+    # Split the training data into training and validation sets
+    from sklearn.model_selection import train_test_split
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+
     # Load the saved scaler
     scaler = joblib.load('scaler.pkl')
-    
+
     # Define and train the model
     regressior = Sequential()
-    regressior.add(LSTM(units = 100, activation = 'relu', return_sequences = True, input_shape = (X_train.shape[1], 5), kernel_regularizer=tf.keras.regularizers.l2(0.001)))
+
+    # First LSTM layer
+    regressior.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], 5)))
     regressior.add(Dropout(0.2))
-    regressior.add(LSTM(units = 100, activation = 'relu', return_sequences = True, kernel_regularizer=tf.keras.regularizers.l2(0.001)))
+
+    # Second LSTM layer
+    regressior.add(LSTM(units=50, return_sequences=True))
     regressior.add(Dropout(0.2))
-    regressior.add(LSTM(units = 100, activation = 'relu', return_sequences = True, kernel_regularizer=tf.keras.regularizers.l2(0.001)))
+
+    # Third LSTM layer
+    regressior.add(LSTM(units=50))
     regressior.add(Dropout(0.2))
-    regressior.add(LSTM(units = 100, activation = 'relu', kernel_regularizer=tf.keras.regularizers.l2(0.001)))
-    regressior.add(Dropout(0.2))
-    regressior.add(Dense(units = 1))
-    regressior.compile(optimizer='rmsprop', loss='mean_squared_error')
-    history = regressior.fit(X_train, y_train, epochs=25, batch_size=64)
-    
+
+    # Output layer
+    regressior.add(Dense(units=1))
+
+    # Compile the model
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+    regressior.compile(optimizer=optimizer, loss='mean_squared_error')
+
+    # Use early stopping to exit training if validation loss is not decreasing after certain epochs
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
+
+    # Fit the model
+    history = regressior.fit(
+        X_train, y_train, 
+        epochs=50, 
+        batch_size=32,
+        validation_data=(X_val, y_val),
+        callbacks=[early_stopping]
+    )
+
+    # Save the trained model
     regressior.save(str(stock)+'_model.h5')
+
     task.upload_artifact(stock+'_model', str(stock)+'_model.h5')
     for epoch, loss in enumerate(history.history['loss']):
         task.get_logger().report_scalar(title='Training Loss', series='Loss', value=loss, iteration=epoch)
