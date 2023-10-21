@@ -67,15 +67,15 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     regressior = Sequential()
 
     # First LSTM layer
-    regressior.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], 5)))
+    regressior.add(LSTM(units=100, return_sequences=True, input_shape=(X_train.shape[1], 5)))
     regressior.add(Dropout(0.2))
 
     # Second LSTM layer
-    regressior.add(LSTM(units=50, return_sequences=True))
+    regressior.add(LSTM(units=100, return_sequences=True))
     regressior.add(Dropout(0.2))
 
     # Third LSTM layer
-    regressior.add(LSTM(units=50))
+    regressior.add(LSTM(units=100))
     regressior.add(Dropout(0.2))
 
     # Output layer
