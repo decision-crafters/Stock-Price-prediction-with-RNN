@@ -52,7 +52,6 @@ def data_preparation(api_key: str, stock: str) -> (Task.id, tuple):
     task.upload_artifact('y_train', 'y_train.npy')
     
     task.close()
-    print("Training data shape:", data_training.shape)
     return task.id, data_training.shape
 
 def model_training(stock: str, training_data_shape: tuple) -> Task.id:
@@ -71,7 +70,6 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
 
     # Define and train the model
     regressior = Sequential()
-
 
     # First LSTM layer
     units_1 = int(os.environ.get('LSTM_UNITS_1', 10))
@@ -140,34 +138,10 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     dummy_array[:,0] = y_pred[:,0]
     y_pred_original_scale = scaler.inverse_transform(dummy_array)[:,0]
 
-    # Extract actual prices and dates
-    actual_prices = df[df['date']>'2023-01-01']['4. close'].values[-len(y_pred_original_scale):]
-    dates = df[df['date']>'2023-01-01']['date'].values[-len(y_pred_original_scale):]
-
-    # Calculate price difference and percentage difference
-    price_difference = y_pred_original_scale - actual_prices
-    percentage_difference = (price_difference / actual_prices) * 100
-
-    # Print the last day's differences
-    print(f"Price difference for the last date: {price_difference[-1]}")
-    print(f"Percentage difference for the last date: {percentage_difference[-1]}%")
-
-    # Generate a graph of the price prediction
-    plt.figure(figsize=(14, 7))
-    plt.plot(dates, y_pred_original_scale, label='Predicted Prices', color='blue')
-    plt.plot(dates, actual_prices, label='Actual Prices', color='red', linestyle='dashed')
-    plt.xlabel('Date')
-    plt.ylabel('Price')
-    plt.title('Price Prediction for ' + stock)
-    plt.legend()
-    plt.xticks(dates[::10], rotation=45)
-    plt.tight_layout()
-    plt.savefig('price_prediction.png')
-    task.upload_artifact('price_prediction', 'price_prediction.png')
     # Extract actual prices, VWAP, and dates
-    actual_prices = df[df['date'] > '2023-01-01']['4. close'].values[-len(y_pred_original_scale):]
-    actual_vwap = df[df['date'] > '2023-01-01']['VWAP'].values[-len(y_pred_original_scale):]
-    dates = df[df['date'] > '2023-01-01']['date'].values[-len(y_pred_original_scale):]
+    actual_prices = df[df['date']>'2023-01-01']['4. close'].values[-len(y_pred_original_scale):]
+    actual_vwap = df[df['date']>'2023-01-01']['VWAP'].values[-len(y_pred_original_scale):]
+    dates = df[df['date']>'2023-01-01']['date'].values[-len(y_pred_original_scale):]
 
     # Generate a graph comparing VWAP, Actual Prices, and Predicted Prices
     plt.figure(figsize=(14, 7))
@@ -183,18 +157,6 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     plt.savefig('vwap_actual_predicted.png')
     task.upload_artifact('vwap_actual_predicted', 'vwap_actual_predicted.png')
 
-    # Generate a graph of percentage difference
-    plt.figure(figsize=(14, 7))
-    plt.plot(dates, percentage_difference, label='Percentage Difference', color='green')
-    plt.xlabel('Date')
-    plt.ylabel('Percentage Difference')
-    plt.title('Percentage Difference for ' + stock)
-    plt.axhline(0, color='red', linestyle='dashed')
-    plt.xticks(dates[::10], rotation=45)
-    plt.tight_layout()
-    plt.savefig('percentage_difference.png')
-    task.upload_artifact('percentage_difference', 'percentage_difference.png')
-
     task.close()
     # Check if percentage difference is above a certain threshold
     threshold = 5  # Adjust this value as per your requirement
@@ -206,4 +168,3 @@ if __name__ == "__main__":
     stock = os.environ.get("STOCK", "GOOG")
     task_id, training_data_shape = data_preparation(api_key=API_KEY, stock=stock)
     model_training(stock=stock, training_data_shape=training_data_shape)
-
