@@ -43,30 +43,40 @@ def fetch_news_sentiment(ticker):
     
     return sentiment_scores, sentiment_labels
 
+def convert_score_to_category(score):
+    if score <= -0.35:
+        return "Bearish"
+    elif -0.35 < score <= -0.15:
+        return "Somewhat-Bearish"
+    elif -0.15 < score < 0.15:
+        return "Neutral"
+    elif 0.15 <= score < 0.35:
+        return "Somewhat_Bullish"
+    else:
+        return "Bullish"
+
 def plot_sentiment(task, ticker):
-    sentiment_scores, sentiment_labels = fetch_news_sentiment(ticker)
-    
-    # Create a new figure
-    plt.figure(figsize=(14, 7))
-    
-    # Create a bar plot for sentiment
-    bars = plt.bar(range(len(sentiment_scores)), sentiment_scores, color=['green' if s > 0 else 'red' for s in sentiment_scores])
-    
-    # Annotate bars with sentiment labels
-    for bar, label in zip(bars, sentiment_labels):
-        yval = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2, yval, label, ha='center', va='bottom', color='black')
-    
-    # Title, labels, and tweaks
-    plt.title(f"News Sentiment for {ticker}")
-    plt.ylabel('Sentiment Score')
-    plt.xlabel('News Item Index')
-    plt.xticks(range(len(sentiment_scores)))
+    sentiment_scores, _ = fetch_news_sentiment(ticker)
+
+    # Convert scores to categories
+    sentiment_categories = [convert_score_to_category(score) for score in sentiment_scores]
+
+    # Count occurrences of each category
+    category_counts = dict((category, sentiment_categories.count(category)) for category in set(sentiment_categories))
+
+    # Create a pie chart
+    plt.figure(figsize=(10, 8))
+    plt.pie(category_counts.values(), labels=category_counts.keys(), autopct='%1.1f%%', startangle=140, colors=['red', 'lightcoral', 'gold', 'yellowgreen', 'green'])
+    plt.title(f"News Sentiment Distribution for {ticker}")
     
     # Display the plot
     plt.tight_layout()
-    plt.savefig('sentiment.png')
-    task.upload_artifact('sentiment', 'sentiment.png')
+    plt.savefig('sentiment_pie.png')
+    task.upload_artifact('sentiment_pie', 'sentiment_pie.png')
+
+    # Print the overall recommended sentiment
+    recommended_sentiment = max(category_counts, key=category_counts.get)
+    print(f"The overall recommended sentiment for {ticker} is: {recommended_sentiment}")
 
 
 def data_preparation(api_key: str, stock: str) -> (Task.id, tuple):
