@@ -173,7 +173,7 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
 
 def predict_future_days(model, data, scaler, days=7):
     """Predict the stock price for the next 'days' days."""
-    input_data = data[-180:]  # Extract the last 180 days of data
+    input_data = data[-180:].copy()  # Extract the last 180 days of data
     predictions = []
 
     for i in range(days):
@@ -181,10 +181,15 @@ def predict_future_days(model, data, scaler, days=7):
         predicted_value = model.predict(input_data.reshape(1, 180, 7))[0][0]
         predictions.append(predicted_value)
         
-        # Update the input data to include the new prediction and exclude the oldest day
-        input_data = np.append(input_data[1:], [[predicted_value]], axis=0)
+        # Prepare the new row to append
+        new_row = np.zeros(input_data.shape[1])
+        new_row[-1] = predicted_value
+
+        # Append the new row and exclude the oldest day
+        input_data = np.vstack((input_data[1:], new_row))
 
     return predictions
+
 
 
 def plot_future_predictions(task, model, scaler, ticker, data, training_data_shape, days=7):
