@@ -194,7 +194,7 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     dummy_array[:,0] = future_predictions
     future_predictions_original_scale = scaler.inverse_transform(dummy_array)[:,0]
     plt.figure(figsize=(14, 7))
-    plt.plot(range(days), future_predictions_original_scale, label='Predicted Future Prices', color='blue')
+    plt.plot(range(len(future_predictions_original_scale)), future_predictions_original_scale, label='Predicted Future Prices', color='blue')
     plt.xlabel('Day')
     plt.ylabel('Price')
     plt.title(f'Predicted Prices for the Next {days} Days for ' + stock)
