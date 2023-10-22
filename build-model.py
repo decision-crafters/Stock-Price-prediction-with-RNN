@@ -10,6 +10,49 @@ from alpha_vantage.timeseries import TimeSeries
 import os
 import matplotlib.pyplot as plt
 import joblib
+import requests
+
+
+def fetch_news_sentiment(ticker):
+    API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY"  # Replace with your actual API key
+    BASE_URL = "https://www.alphavantage.co/query"
+    
+    # Make the API request
+    response = requests.get(BASE_URL, params={
+        "function": "NEWS_SENTIMENT",
+        "tickers": ticker,
+        "apikey": API_KEY
+    })
+    
+    # Check if the request was successful
+    response.raise_for_status()
+    
+    # Load the JSON data
+    data = response.json()
+    
+    # Extract the sentiment (adjust according to actual JSON structure)
+    sentiment = data[ticker]['sentiment']
+    
+    return sentiment
+
+def plot_sentiment(task,ticker):
+    sentiment = fetch_news_sentiment(ticker)
+    
+    # Create a new figure
+    plt.figure(figsize=(8, 5))
+    
+    # Create a simple bar plot for sentiment
+    plt.bar(ticker, sentiment, color='blue')
+    
+    # Title and labels
+    plt.title(f"News Sentiment for {ticker}")
+    plt.ylabel('Sentiment Value')
+    plt.xlabel('Ticker')
+    
+    # Display the plot
+    plt.tight_layout()
+    plt.savefig('sentiment.png')
+    task.upload_artifact('sentiment', 'sentiment.png')
 
 def data_preparation(api_key: str, stock: str) -> (Task.id, tuple):
     task = Task.init(project_name='My Project', task_name='Data Preparation')
@@ -190,6 +233,7 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     plt.tight_layout()
     plt.savefig('percentage_difference.png')
     task.upload_artifact('percentage_difference', 'percentage_difference.png')
+    plot_sentiment(task,stock)
 
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
