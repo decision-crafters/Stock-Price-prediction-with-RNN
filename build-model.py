@@ -160,8 +160,18 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     plt.legend()
     plt.xticks(dates[::10], rotation=45)
     plt.tight_layout()
+
+    # Print the last values under the chart
+    last_date = dates[-1]
+    last_pred = y_pred_original_scale[-1]
+    last_vwap = actual_vwap[-1]
+    last_actual = actual_prices[-1]
+    info_text = f"Last Date: {last_date}\nPredicted: {last_pred:.2f}\nVWAP: {last_vwap:.2f}\nActual: {last_actual:.2f}"
+    plt.text(0.02, 0.02, info_text, transform=plt.gca().transAxes, verticalalignment='bottom', bbox=dict(boxstyle="square,pad=0.3", facecolor="white", edgecolor="black"))
+
     plt.savefig('vwap_actual_predicted.png')
     task.upload_artifact('vwap_actual_predicted', 'vwap_actual_predicted.png')
+
 
     task.close()
     # Check if percentage difference is above a certain threshold
@@ -169,6 +179,17 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     # Calculate price difference and percentage difference
     price_difference = y_pred_original_scale - actual_prices
     percentage_difference = (price_difference / actual_prices) * 100
+    # Generate a graph of percentage difference
+    plt.figure(figsize=(14, 7))
+    plt.plot(dates, percentage_difference, label='Percentage Difference', color='green')
+    plt.xlabel('Date')
+    plt.ylabel('Percentage Difference')
+    plt.title('Percentage Difference for ' + stock)
+    plt.axhline(0, color='red', linestyle='dashed')
+    plt.xticks(dates[::10], rotation=45)
+    plt.tight_layout()
+    plt.savefig('percentage_difference.png')
+    task.upload_artifact('percentage_difference', 'percentage_difference.png')
 
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
