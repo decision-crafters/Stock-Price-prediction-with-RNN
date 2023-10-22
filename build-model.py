@@ -38,7 +38,7 @@ def fetch_news_sentiment(ticker):
     for entry in data['feed']:
         for ticker_data in entry['ticker_sentiment']:
             if ticker_data['ticker'] == ticker:
-                sentiment_scores.append(ticker_data['ticker_sentiment_score'])
+                sentiment_scores.append(float(ticker_data['ticker_sentiment_score']))
                 sentiment_labels.append(ticker_data['ticker_sentiment_label'])
     
     return sentiment_scores, sentiment_labels
