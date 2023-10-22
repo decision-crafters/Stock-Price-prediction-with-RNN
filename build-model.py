@@ -214,9 +214,6 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
 
     plt.savefig('vwap_actual_predicted.png')
     task.upload_artifact('vwap_actual_predicted', 'vwap_actual_predicted.png')
-
-
-    task.close()
     # Check if percentage difference is above a certain threshold
     threshold = 5  # Adjust this value as per your requirement
     # Calculate price difference and percentage difference
@@ -237,6 +234,7 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
 
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
+    task.close()
 
 if __name__ == "__main__":
     API_KEY = os.environ.get("API_KEY", "changeme")
