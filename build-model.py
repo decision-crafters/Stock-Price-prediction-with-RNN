@@ -166,6 +166,10 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     task.close()
     # Check if percentage difference is above a certain threshold
     threshold = 5  # Adjust this value as per your requirement
+    # Calculate price difference and percentage difference
+    price_difference = y_pred_original_scale - actual_prices
+    percentage_difference = (price_difference / actual_prices) * 100
+
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
 
