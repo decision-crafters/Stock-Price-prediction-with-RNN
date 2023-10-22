@@ -119,9 +119,15 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     df = pd.read_csv('dataset.csv')
     days = 180
     df = df[::-1]
+
+    # Calculate VWAP and price_avg for the test data
+    df['price_avg'] = (df['1. open'] + df['2. high'] + df['3. low'] + df['4. close']) / 4
+    df['VWAP'] = (df['price_avg'] * df['5. volume']).cumsum() / df['5. volume'].cumsum()
+
     data_test = df[df['date']>'2023-01-01'].copy()
     data_test_scaled = data_test.drop('date', axis=1)
     data_test_scaled = scaler.transform(data_test_scaled)
+
     X_test = []
     for i, row in enumerate(data_test_scaled):
         if i >= days:
