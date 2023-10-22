@@ -12,9 +12,8 @@ import matplotlib.pyplot as plt
 import joblib
 import requests
 
-
 def fetch_news_sentiment(ticker):
-    API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY"  # Replace with your actual API key
+    #API_KEY = "YOUR_ALPHA_VANTAGE_API_KEY"  # Replace with your actual API key
     BASE_URL = "https://www.alphavantage.co/query"
     
     # Make the API request
@@ -31,31 +30,44 @@ def fetch_news_sentiment(ticker):
     data = response.json()
 
     print(data)
-
     
-    # Extract the sentiment (adjust according to actual JSON structure)
-    sentiment = data[ticker]['sentiment']
-    
-    return sentiment
+    # Extract the sentiment scores and labels for the specified ticker
+    sentiment_scores = []
+    sentiment_labels = []
 
-def plot_sentiment(task,ticker):
-    sentiment = fetch_news_sentiment(ticker)
+    for entry in data['feed']:
+        for ticker_data in entry['ticker_sentiment']:
+            if ticker_data['ticker'] == ticker:
+                sentiment_scores.append(ticker_data['ticker_sentiment_score'])
+                sentiment_labels.append(ticker_data['ticker_sentiment_label'])
+    
+    return sentiment_scores, sentiment_labels
+
+def plot_sentiment(task, ticker):
+    sentiment_scores, sentiment_labels = fetch_news_sentiment(ticker)
     
     # Create a new figure
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(14, 7))
     
-    # Create a simple bar plot for sentiment
-    plt.bar(ticker, sentiment, color='blue')
+    # Create a bar plot for sentiment
+    bars = plt.bar(range(len(sentiment_scores)), sentiment_scores, color=['green' if s > 0 else 'red' for s in sentiment_scores])
     
-    # Title and labels
+    # Annotate bars with sentiment labels
+    for bar, label in zip(bars, sentiment_labels):
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2, yval, label, ha='center', va='bottom', color='black')
+    
+    # Title, labels, and tweaks
     plt.title(f"News Sentiment for {ticker}")
-    plt.ylabel('Sentiment Value')
-    plt.xlabel('Ticker')
+    plt.ylabel('Sentiment Score')
+    plt.xlabel('News Item Index')
+    plt.xticks(range(len(sentiment_scores)))
     
     # Display the plot
     plt.tight_layout()
     plt.savefig('sentiment.png')
     task.upload_artifact('sentiment', 'sentiment.png')
+
 
 def data_preparation(api_key: str, stock: str) -> (Task.id, tuple):
     task = Task.init(project_name='My Project', task_name='Data Preparation')
