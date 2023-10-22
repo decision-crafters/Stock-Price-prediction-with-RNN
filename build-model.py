@@ -86,6 +86,25 @@ def data_preparation(api_key: str, stock: str):
     task.close()
     return task.id, data_training.shape, data_training, scaler
 
+def predict_future_days(model, data, scaler, days=7):
+    """Predict the stock price for the next 'days' days."""
+    input_data = data[-180:].copy()  # Extract the last 180 days of data
+    predictions = []
+
+    for i in range(days):
+        # Reshape the input data to the shape the model expects
+        predicted_value = model.predict(input_data.reshape(1, 180, 7))[0][0]
+        predictions.append(predicted_value)
+        
+        # Prepare the new row to append
+        new_row = np.zeros(input_data.shape[1])
+        new_row[-1] = predicted_value
+
+        # Append the new row and exclude the oldest day
+        input_data = np.vstack((input_data[1:], new_row))
+
+    return predictions
+
 def model_training(stock: str, training_data_shape: tuple, data_training, scaler):
     task = Task.init(project_name='My Project', task_name=str(stock)+' Training')
     X_train = np.load('X_train.npy')
@@ -169,31 +188,8 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     plot_sentiment(task,stock)
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
-    task.close()
 
-def predict_future_days(model, data, scaler, days=7):
-    """Predict the stock price for the next 'days' days."""
-    input_data = data[-180:].copy()  # Extract the last 180 days of data
-    predictions = []
-
-    for i in range(days):
-        # Reshape the input data to the shape the model expects
-        predicted_value = model.predict(input_data.reshape(1, 180, 7))[0][0]
-        predictions.append(predicted_value)
-        
-        # Prepare the new row to append
-        new_row = np.zeros(input_data.shape[1])
-        new_row[-1] = predicted_value
-
-        # Append the new row and exclude the oldest day
-        input_data = np.vstack((input_data[1:], new_row))
-
-    return predictions
-
-
-
-def plot_future_predictions(task, model, scaler, ticker, data, training_data_shape, days=7):
-    future_predictions = predict_future_days(model, data, scaler, days)
+    future_predictions = predict_future_days(model, data_training, scaler, 7)
     dummy_array = np.zeros(shape=(len(future_predictions), training_data_shape[1]))
     dummy_array[:,0] = future_predictions
     future_predictions_original_scale = scaler.inverse_transform(dummy_array)[:,0]
@@ -201,13 +197,14 @@ def plot_future_predictions(task, model, scaler, ticker, data, training_data_sha
     plt.plot(range(days), future_predictions_original_scale, label='Predicted Future Prices', color='blue')
     plt.xlabel('Day')
     plt.ylabel('Price')
-    plt.title(f'Predicted Prices for the Next {days} Days for ' + ticker)
+    plt.title(f'Predicted Prices for the Next {days} Days for ' + stock)
     plt.legend()
     plt.xticks(range(days))
     plt.tight_layout()
     plt.savefig(f'future_predictions_{days}_days.png')
     task.upload_artifact(f'future_predictions_{days}_days', f'future_predictions_{days}_days.png')
     print(future_predictions_original_scale)
+    task.close()
 
 if __name__ == "__main__":
     API_KEY = os.environ.get("API_KEY", "changeme")
@@ -215,4 +212,4 @@ if __name__ == "__main__":
     task_id, training_data_shape, data_training, scaler = data_preparation(api_key=API_KEY, stock=stock)
     model_training(stock=stock, training_data_shape=training_data_shape, data_training=data_training, scaler=scaler)
     model = tf.keras.models.load_model(str(stock)+'_model.h5')
-    plot_future_predictions(None, model, scaler, stock, data_training, training_data_shape, 7)
+    #plot_future_predictions(None, model, scaler, stock, data_training, training_data_shape, 7)
