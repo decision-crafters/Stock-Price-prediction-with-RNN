@@ -29,6 +29,9 @@ def fetch_news_sentiment(ticker):
     
     # Load the JSON data
     data = response.json()
+
+    print(data)
+
     
     # Extract the sentiment (adjust according to actual JSON structure)
     sentiment = data[ticker]['sentiment']
