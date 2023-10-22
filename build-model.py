@@ -188,23 +188,35 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     plot_sentiment(task,stock)
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
-
-    future_predictions = predict_future_days(model, data_training, scaler, 7)
+    days = 7
+    future_predictions = predict_future_days(model, data_training, scaler, days)
     dummy_array = np.zeros(shape=(len(future_predictions), training_data_shape[1]))
     dummy_array[:,0] = future_predictions
     future_predictions_original_scale = scaler.inverse_transform(dummy_array)[:,0]
+
+    # Extracting the current price from the last available data in `data_training`
+    current_price_unscaled = data_training[-1, 0]  # Assuming the 0th column is the price column
+    current_price_array = np.zeros(shape=(1, training_data_shape[1]))
+    current_price_array[0, 0] = current_price_unscaled
+    current_price_original_scale = scaler.inverse_transform(current_price_array)[0, 0]
+
+    # Adding the current price to the beginning of the future prediction
+    all_prices = np.insert(future_predictions_original_scale, 0, current_price_original_scale)
+
     plt.figure(figsize=(14, 7))
-    plt.plot(range(len(future_predictions_original_scale)), future_predictions_original_scale, label='Predicted Future Prices', color='blue')
+    plt.plot(range(len(all_prices)), all_prices, label='Prices', color='blue')
+    plt.axvline(x=0, color='red', linestyle='--', label='Current Price')  # Vertical line to indicate current price
     plt.xlabel('Day')
     plt.ylabel('Price')
     plt.title(f'Predicted Prices for the Next {days} Days for ' + stock)
     plt.legend()
-    plt.xticks(range(days))
+    plt.xticks(range(days+1))  # Adding 1 for the current day
     plt.tight_layout()
     plt.savefig(f'future_predictions_{days}_days.png')
     task.upload_artifact(f'future_predictions_{days}_days', f'future_predictions_{days}_days.png')
-    print(future_predictions_original_scale)
+    print(all_prices)
     task.close()
+
 
 if __name__ == "__main__":
     API_KEY = os.environ.get("API_KEY", "changeme")
