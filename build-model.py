@@ -203,12 +203,23 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     # Adding the current price to the beginning of the future prediction
     all_prices = np.insert(future_predictions_original_scale, 0, current_price_original_scale)
 
+    # Extract current VWAP (assuming VWAP is in the second column of `data_training`)
+    current_vwap_unscaled = data_training[-1, 1]  # Adjust index if necessary
+    vwap_array = np.full(shape=(days+1,), fill_value=current_vwap_unscaled)  # assuming VWAP remains same for 'days'
+    vwap_original_scale = scaler.inverse_transform(np.column_stack((vwap_array, np.zeros_like(vwap_array))))[:,0]  # assuming VWAP is the first column in the scaler's features
+
     plt.figure(figsize=(14, 7))
     plt.plot(range(len(all_prices)), all_prices, label='Prices', color='blue')
+    plt.plot(range(len(vwap_original_scale)), vwap_original_scale, label='VWAP', color='green', linestyle='dotted')
     plt.axvline(x=0, color='red', linestyle='--', label='Current Price')  # Vertical line to indicate current price
+
+    # Adding price labels at the end of each line
+    for i, price in enumerate(all_prices):
+        plt.text(i, price, f"{price:.2f}", ha='left', va='center', fontsize=8)
+
     plt.xlabel('Day')
     plt.ylabel('Price')
-    plt.title(f'Predicted Prices for the Next {days} Days for ' + stock)
+    plt.title(f'Predicted Prices & VWAP for the Next {days} Days for ' + stock)
     plt.legend()
     plt.xticks(range(days+1))  # Adding 1 for the current day
     plt.tight_layout()
@@ -216,6 +227,7 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     task.upload_artifact(f'future_predictions_{days}_days', f'future_predictions_{days}_days.png')
     print(all_prices)
     task.close()
+
 
 
 if __name__ == "__main__":
