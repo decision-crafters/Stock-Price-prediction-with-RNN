@@ -316,10 +316,11 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     plt.figure(figsize=(14, 7))
 
     # Plotting the LSTM model predictions
-    plt.plot(range(8), [last_known_price] + future_predictions_original_scale, 'o-', label='LSTM Predictions', color='blue')
+    plt.plot(range(1, 8), [last_known_price] + future_predictions_original_scale, 'o-', label='LSTM Predictions', color='blue')
+
 
     # Plotting the simple projection based on average increase
-    plt.plot(range(8), [last_known_price] + projected_prices_simple, 's-', label='Simple Projection', color='green')
+    plt.plot(range(1, 8), [last_known_price] + projected_prices_simple, 's-', label='Simple Projection', color='green')
 
     plt.xlabel('Day')
     plt.ylabel('Price')
