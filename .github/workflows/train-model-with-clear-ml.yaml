@@ -1,10 +1,11 @@
 name: Train Model with ClearML
 
 on:
-  push:
-    branches:
-      - master  # or your default branch
-
+    workflow_dispatch:
+      inputs:
+        stock:
+          description: 'Stock'
+          required: true
 
       
 jobs:
