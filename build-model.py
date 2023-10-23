@@ -170,18 +170,16 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
 
     # First LSTM layer
     units_1 = int(os.environ.get('LSTM_UNITS_1', 10))
-    regressior.add(LSTM(units=units_1, return_sequences=True, input_shape=(X_train.shape[1], 7)))
-    regressior.add(Dropout(0.2))
-
     # Second LSTM layer
     units_2 = int(os.environ.get('LSTM_UNITS_2', 20))
-    regressior.add(LSTM(units=units_2, return_sequences=True))
-    regressior.add(Dropout(0.2))
-
     # Third LSTM layer
     units_3 = int(os.environ.get('LSTM_UNITS_3', 30))
-    regressior.add(LSTM(units=units_3))
-    regressior.add(Dropout(0.2))
+    # First LSTM layer
+    regressior.add(LSTM(units=units_1, return_sequences=True, dropout=0.2, recurrent_dropout=0.2, input_shape=(X_train.shape[1], 7)))
+    # Second LSTM layer
+    regressior.add(LSTM(units=units_2, return_sequences=True, dropout=0.3, recurrent_dropout=0.3))
+    # Third LSTM layer
+    regressior.add(LSTM(units=units_3, dropout=0.4, recurrent_dropout=0.4))
 
     # Output layer
     regressior.add(Dense(units=1))
