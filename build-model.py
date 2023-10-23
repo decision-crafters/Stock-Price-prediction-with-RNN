@@ -331,23 +331,29 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     # Plotting the results
     plt.figure(figsize=(14, 7))
     plt.plot(backtest_actual, label='Actual Prices', color='blue')
+
+    # Plotting the current price
+    current_price = backtest_actual[-1]
+    plt.axhline(current_price, color='c', linestyle='--', label=f'Current Price: ${current_price:.2f}')
+
+    # Plotting the buy and sell signals
     plt.scatter(entry_points, [backtest_actual[i] for i in entry_points], marker='^', color='g', label='Buy Signal', alpha=1)
     plt.scatter(exit_points, [backtest_actual[i] for i in exit_points], marker='v', color='r', label='Sell Signal', alpha=1)
+
+    # If you have a next entry point predicted, you can add a label for it
+    if next_entry_point:
+        plt.annotate(f'Next Buy @ Day {next_entry_point}', 
+                    xy=(next_entry_point, current_price), 
+                    xytext=(next_entry_point+5, current_price+5), 
+                    arrowprops=dict(facecolor='black', arrowstyle='->'),
+                    horizontalalignment='right')
+
     plt.title(f'Backtesting Results: Profit/Loss = ${profit_or_loss:.2f}')
     plt.legend()
     plt.tight_layout()
     plt.savefig('backtesting_results.png')
     task.upload_artifact('backtesting_results', 'backtesting_results.png')
 
-    # Predicting the next entry point
-    next_entry_point = None
-    if len(exit_points) > 0 and exit_points[-1] > entry_points[-1]:  # Last signal was a sell
-        for i in range(len(future_predictions_original_scale) - 1):
-            if future_predictions_original_scale[i + 1] > future_predictions_original_scale[i]:
-                next_entry_point = i + 1
-                break
-
-    print(f"Next potential entry point is day: {next_entry_point}")
 
     task.close()
 
