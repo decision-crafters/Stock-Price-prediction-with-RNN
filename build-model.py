@@ -300,8 +300,8 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     plt.xticks(rotation=45)
     plt.tight_layout()
 
-    # Display the plot
-    plt.show()
+    plt.savefig('env_data.png')
+    task.upload_artifact('env_data', 'env_data.png')
 
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
