@@ -89,21 +89,23 @@ def backtest_strategy(predictions, actual_prices):
 
 def predict_future_days(model, data, scaler, days_in_future):
     predictions = []
+    
     # Get the last sequence of data (last 60 days or whatever your sequence length is)
-    last_sequence = data[-1].reshape(-1, data.shape[1])
+    last_sequence = data[-days_in_future:]
     
     for i in range(days_in_future):
+        # Ensure that the last_sequence variable has the correct shape
+        last_sequence_reshaped = last_sequence.reshape(1, days_in_future, data.shape[1])
+        
         # Predict the next day's price
-        next_day_price = model.predict(last_sequence)[0][0]
+        next_day_price = model.predict(last_sequence_reshaped)[0][0]
         predictions.append(next_day_price)
         
         # Add the predicted price to the sequence and remove the first element to maintain sequence length
-        next_sequence = np.append(last_sequence, next_day_price)
-        next_sequence = next_sequence[1:].reshape(-1, data.shape[1])
+        next_sequence = np.append(last_sequence[1:], [[next_day_price] + list(last_sequence[-1, 1:])], axis=0)
         last_sequence = next_sequence
         
     return predictions
-
 
 
 def data_preparation(api_key: str, stock: str) -> (Task.id, tuple):
