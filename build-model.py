@@ -68,6 +68,25 @@ def plot_sentiment(task, ticker):
     plt.savefig('sentiment.png')
     task.upload_artifact('sentiment', 'sentiment.png')
 
+def predict_future_days(model, data, scaler, days=7):
+    """Predict the stock price for the next 'days' days."""
+    input_data = data[-180:].copy()  # Extract the last 180 days of data
+    predictions = []
+
+    for i in range(days):
+        # Reshape the input data to the shape the model expects
+        predicted_value = model.predict(input_data.reshape(1, 180, 7))[0][0]
+        predictions.append(predicted_value)
+        
+        # Prepare the new row to append
+        new_row = np.zeros(input_data.shape[1])
+        new_row[-1] = predicted_value
+
+        # Append the new row and exclude the oldest day
+        input_data = np.vstack((input_data[1:], new_row))
+
+    return predictions
+
 
 def data_preparation(api_key: str, stock: str) -> (Task.id, tuple):
     task = Task.init(project_name='My Project', task_name='Data Preparation')
@@ -249,10 +268,42 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
 
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
+        # Calculate future predictions for 7 days using the LSTM model
+    future_predictions = predict_future_days(model, data_training, scaler, 7)
+    dummy_array = np.zeros(shape=(len(future_predictions), training_data_shape[1]))
+    dummy_array[:, 0] = future_predictions
+    future_predictions_original_scale = scaler.inverse_transform(dummy_array)[:, 0]
+
+    # Calculate the average increase from the LSTM predictions
+    differences = [future_predictions_original_scale[i+1] - future_predictions_original_scale[i] for i in range(len(future_predictions_original_scale)-1)]
+    average_increase = sum(differences) / len(differences)
+
+    # Calculate the projected prices based on the average increase for simple projection
+    last_known_price = future_predictions_original_scale[-1]
+    projected_prices_simple = [last_known_price + i * average_increase for i in range(1, 8)]
+
+    # Plotting both the LSTM predictions and the simple projection
+    plt.figure(figsize=(14, 7))
+
+    # Plotting the LSTM model predictions
+    plt.plot(range(8), [last_known_price] + future_predictions_original_scale, 'o-', label='LSTM Predictions', color='blue')
+
+    # Plotting the simple projection based on average increase
+    plt.plot(range(8), [last_known_price] + projected_prices_simple, 's-', label='Simple Projection', color='green')
+
+    plt.xlabel('Day')
+    plt.ylabel('Price')
+    plt.title('Comparison of LSTM Predictions and Simple Projection for 7 Days')
+    plt.legend()
+    plt.xticks(range(8))
+    plt.tight_layout()
+    plt.savefig('lstm_vs_simple_projection.png')
+    task.upload_artifact('lstm_vs_simple_projection', 'lstm_vs_simple_projection.png')
+
     task.close()
 
 if __name__ == "__main__":
     API_KEY = os.environ.get("API_KEY", "changeme")
     stock = os.environ.get("STOCK", "GOOG")
-    task_id, training_data_shape = data_preparation(api_key=API_KEY, stock=stock)
-    model_training(stock=stock, training_data_shape=training_data_shape)
+    task_id, training_data_shape, data_training, scaler = data_preparation(api_key=API_KEY, stock=stock)
+    model_training(stock=stock, training_data_shape=training_data_shape, data_training=data_training, scaler=scaler)
