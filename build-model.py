@@ -161,7 +161,7 @@ def data_preparation(api_key: str, stock: str) -> (Task.id, tuple):
     task.close()
     return task.id, data_training.shape, data_training, scaler
 
-def model_training(stock: str, training_data_shape: tuple) -> Task.id:
+def model_training(stock: str, training_data_shape: tuple, data_training, scaler) -> Task.id:
     task = Task.init(project_name='My Project', task_name=str(stock)+' Training')
     
     # Load preprocessed data
