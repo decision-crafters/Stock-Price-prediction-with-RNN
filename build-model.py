@@ -87,24 +87,23 @@ def backtest_strategy(predictions, actual_prices):
     return entry_points, exit_points, profit_or_loss
 
 
-def predict_future_days(model, data, scaler, days=7):
-    """Predict the stock price for the next 'days' days."""
-    input_data = data[-180:].copy()  # Extract the last 180 days of data
+def predict_future_days(model, data, scaler, days_in_future):
     predictions = []
-
-    for i in range(days):
-        # Reshape the input data to the shape the model expects
-        predicted_value = model.predict(input_data.reshape(1, 180, 7))[0][0]
-        predictions.append(predicted_value)
+    # Get the last sequence of data (last 60 days or whatever your sequence length is)
+    last_sequence = data[-1].reshape(-1, data.shape[1])
+    
+    for i in range(days_in_future):
+        # Predict the next day's price
+        next_day_price = model.predict(last_sequence)[0][0]
+        predictions.append(next_day_price)
         
-        # Prepare the new row to append
-        new_row = np.zeros(input_data.shape[1])
-        new_row[-1] = predicted_value
-
-        # Append the new row and exclude the oldest day
-        input_data = np.vstack((input_data[1:], new_row))
-
+        # Add the predicted price to the sequence and remove the first element to maintain sequence length
+        next_sequence = np.append(last_sequence, next_day_price)
+        next_sequence = next_sequence[1:].reshape(-1, data.shape[1])
+        last_sequence = next_sequence
+        
     return predictions
+
 
 
 def data_preparation(api_key: str, stock: str) -> (Task.id, tuple):
@@ -195,8 +194,8 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     # Fit the model
     history = regressior.fit(
         X_train, y_train, 
-        epochs=100, 
-        batch_size=32,
+        epochs = int(os.environ.get("EPOCHS", 100)),
+        batch_size = int(os.environ.get("BATCH_SIZE", 32)),
         validation_data=(X_val, y_val),
         callbacks=[early_stopping]
     )
