@@ -294,11 +294,16 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
 
     # Plotting
     plt.figure(figsize=(10, 6))
-    plt.bar(env_vars, values, color='skyblue')
+    bars = plt.bar(env_vars, values, color='skyblue')
     plt.ylabel('Value')
     plt.title('Environment Variables Visualization')
     plt.xticks(rotation=45)
     plt.tight_layout()
+
+    # Displaying the actual values on top of each bar
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2, yval + 0.05, round(yval,2), ha='center', va='bottom')
 
     plt.savefig('env_data.png')
     task.upload_artifact('env_data', 'env_data.png')
