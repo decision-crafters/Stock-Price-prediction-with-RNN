@@ -68,6 +68,36 @@ def plot_sentiment(task, ticker):
     plt.savefig('sentiment.png')
     task.upload_artifact('sentiment', 'sentiment.png')
 
+def backtest_strategy(predictions, actual_prices):
+    """Backtest a simple momentum strategy using predictions."""
+    cash = 10000  # Starting cash
+    stock_quantity = 0
+    initial_cash = cash
+    entry_points = []
+    exit_points = []
+    
+    for i in range(len(predictions) - 1):
+        # Buy signal: If next day's prediction is higher and we have cash, buy
+        if predictions[i + 1] > predictions[i] and cash >= actual_prices[i]:
+            stock_quantity += cash // actual_prices[i]
+            cash -= stock_quantity * actual_prices[i]
+            entry_points.append(i)
+        
+        # Sell signal: If next day's prediction is lower and we have stock, sell
+        if predictions[i + 1] < predictions[i] and stock_quantity > 0:
+            cash += stock_quantity * actual_prices[i]
+            stock_quantity = 0
+            exit_points.append(i)
+            
+    # If we're holding stock at the end, sell it
+    if stock_quantity > 0:
+        cash += stock_quantity * actual_prices[-1]
+        exit_points.append(len(predictions) - 1)
+    
+    profit_or_loss = cash - initial_cash
+    return entry_points, exit_points, profit_or_loss
+
+
 def predict_future_days(model, data, scaler, days=7):
     """Predict the stock price for the next 'days' days."""
     input_data = data[-180:].copy()  # Extract the last 180 days of data
@@ -299,6 +329,34 @@ def model_training(stock: str, training_data_shape: tuple) -> Task.id:
     plt.tight_layout()
     plt.savefig('lstm_vs_simple_projection.png')
     task.upload_artifact('lstm_vs_simple_projection', 'lstm_vs_simple_projection.png')
+
+    # Backtesting logic starts here
+    split_index = int(0.8 * len(y_pred_original_scale))
+    backtest_predictions = y_pred_original_scale[split_index:]
+    backtest_actual = actual_prices[split_index:]
+
+    entry_points, exit_points, profit_or_loss = backtest_strategy(backtest_predictions, backtest_actual)
+
+    # Plotting the results
+    plt.figure(figsize=(14, 7))
+    plt.plot(backtest_actual, label='Actual Prices', color='blue')
+    plt.scatter(entry_points, [backtest_actual[i] for i in entry_points], marker='^', color='g', label='Buy Signal', alpha=1)
+    plt.scatter(exit_points, [backtest_actual[i] for i in exit_points], marker='v', color='r', label='Sell Signal', alpha=1)
+    plt.title(f'Backtesting Results: Profit/Loss = ${profit_or_loss:.2f}')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('backtesting_results.png')
+    task.upload_artifact('backtesting_results', 'backtesting_results.png')
+
+    # Predicting the next entry point
+    next_entry_point = None
+    if len(exit_points) > 0 and exit_points[-1] > entry_points[-1]:  # Last signal was a sell
+        for i in range(len(future_predictions_original_scale) - 1):
+            if future_predictions_original_scale[i + 1] > future_predictions_original_scale[i]:
+                next_entry_point = i + 1
+                break
+
+    print(f"Next potential entry point is day: {next_entry_point}")
 
     task.close()
 
