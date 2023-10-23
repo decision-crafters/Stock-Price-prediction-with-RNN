@@ -286,6 +286,23 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     task.upload_artifact('percentage_difference', 'percentage_difference.png')
     plot_sentiment(task,stock)
 
+    # List of environment variables of interest
+    env_vars = ['LSTM_UNITS_1', 'LSTM_UNITS_2', 'LSTM_UNITS_3', 'EPOCHS', 'BATCH_SIZE']
+
+    # Extract the values of the environment variables
+    values = [int(os.environ.get(var, 0)) for var in env_vars]
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.bar(env_vars, values, color='skyblue')
+    plt.ylabel('Value')
+    plt.title('Environment Variables Visualization')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    # Display the plot
+    plt.show()
+
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
     # Get the last actual price of the Google stock
