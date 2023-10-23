@@ -287,7 +287,10 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
 
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
-        # Calculate future predictions for 7 days using the LSTM model
+    # Get the last actual price of the Google stock
+    last_actual_price = actual_prices[-1]
+
+    # Calculate future predictions for 7 days using the LSTM model
     future_predictions = predict_future_days(model, data_training, scaler, 7)
     dummy_array = np.zeros(shape=(len(future_predictions), training_data_shape[1]))
     dummy_array[:, 0] = future_predictions
@@ -298,19 +301,16 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     average_increase = sum(differences) / len(differences)
 
     # Calculate the projected prices based on the average increase for simple projection
-    last_known_price = future_predictions_original_scale[-1]
-    projected_prices_simple = [last_known_price + i * average_increase for i in range(1, 8)]
+    projected_prices_simple = [last_actual_price + i * average_increase for i in range(1, 8)]
 
     # Plotting both the LSTM predictions and the simple projection
     plt.figure(figsize=(14, 7))
 
     # Plotting the LSTM model predictions
-    plt.plot(range(1, 8), [last_known_price] + future_predictions_original_scale, 'o-', label='LSTM Predictions', color='blue')
-
+    plt.plot(range(1, 8), [last_actual_price] + future_predictions_original_scale, 'o-', label='LSTM Predictions', color='blue')
 
     # Plotting the simple projection based on average increase
-    plt.plot(range(8), [last_known_price] + projected_prices_simple, 's-', label='Simple Projection', color='green')
-
+    plt.plot(range(8), [last_actual_price] + projected_prices_simple, 's-', label='Simple Projection', color='green')
 
     plt.xlabel('Day')
     plt.ylabel('Price')
@@ -321,12 +321,21 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     plt.savefig('lstm_vs_simple_projection.png')
     task.upload_artifact('lstm_vs_simple_projection', 'lstm_vs_simple_projection.png')
 
+
     # Backtesting logic starts here
     split_index = int(0.8 * len(y_pred_original_scale))
     backtest_predictions = y_pred_original_scale[split_index:]
     backtest_actual = actual_prices[split_index:]
 
     entry_points, exit_points, profit_or_loss = backtest_strategy(backtest_predictions, backtest_actual)
+
+    # Predicting the next entry point
+    next_entry_point = None
+    if len(exit_points) > 0 and exit_points[-1] > entry_points[-1]:  # Last signal was a sell
+        for i in range(len(future_predictions_original_scale) - 1):
+            if future_predictions_original_scale[i + 1] > future_predictions_original_scale[i]:
+                next_entry_point = i + 1
+                break
 
     # Plotting the results
     plt.figure(figsize=(14, 7))
@@ -353,6 +362,7 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     plt.tight_layout()
     plt.savefig('backtesting_results.png')
     task.upload_artifact('backtesting_results', 'backtesting_results.png')
+
 
 
     task.close()
