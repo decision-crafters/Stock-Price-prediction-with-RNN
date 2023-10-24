@@ -281,7 +281,7 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     plt.savefig('vwap_actual_predicted.png')
     task.upload_artifact('vwap_actual_predicted', 'vwap_actual_predicted.png')
     # Check if percentage difference is above a certain threshold
-    threshold = os.environ.get("THRESHOLD", 5) # Adjust this value as per your requirement
+    threshold = int(os.environ.get("THRESHOLD", 5)) # Adjust this value as per your requirement
     # Calculate price difference and percentage difference
     price_difference = y_pred_original_scale - actual_prices
     percentage_difference = (price_difference / actual_prices) * 100
@@ -319,6 +319,13 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
 
     plt.savefig('env_data.png')
     task.upload_artifact('env_data', 'env_data.png')
+    percentage_difference[-1] = float(percentage_difference[-1])
+    threshold_str = os.environ.get("THRESHOLD", "5")
+    try:
+        threshold = float(threshold_str)
+    except ValueError:
+        print(f"Warning: THRESHOLD environment variable '{threshold_str}' is not a valid number. Using default value of 3.")
+        threshold = 3.0
 
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
