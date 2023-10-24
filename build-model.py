@@ -53,16 +53,22 @@ def convert_score_to_category(score):
 
 def plot_sentiment(task, ticker):
     sentiment_scores, _ = fetch_news_sentiment(ticker)
-    sentiment_categories = [convert_score_to_category(score) for score in sentiment_scores]
-    category_counts = dict((category, sentiment_categories.count(category)) for category in set(sentiment_categories))
-    plt.figure(figsize=(10, 8))
-    plt.pie(category_counts.values(), labels=category_counts.keys(), autopct='%1.1f%%', startangle=140, colors=['red', 'lightcoral', 'gold', 'yellowgreen', 'green'])
-    plt.title(f"News Sentiment Distribution for {ticker}")
-    plt.tight_layout()
-    plt.savefig('sentiment_pie.png')
-    task.upload_artifact('sentiment_pie', 'sentiment_pie.png')
-    recommended_sentiment = max(category_counts, key=category_counts.get)
-    print(f"The overall recommended sentiment for {ticker} is: {recommended_sentiment}")
+
+    # Check if sentiment_scores is not empty
+    if sentiment_scores:
+        sentiment_categories = [convert_score_to_category(score) for score in sentiment_scores]
+        category_counts = dict((category, sentiment_categories.count(category)) for category in set(sentiment_categories))
+        plt.figure(figsize=(10, 8))
+        plt.pie(category_counts.values(), labels=category_counts.keys(), autopct='%1.1f%%', startangle=140, colors=['red', 'lightcoral', 'gold', 'yellowgreen', 'green'])
+        plt.title(f"News Sentiment Distribution for {ticker}")
+        plt.tight_layout()
+        plt.savefig('sentiment_pie.png')
+        task.upload_artifact('sentiment_pie', 'sentiment_pie.png')
+        recommended_sentiment = max(category_counts, key=category_counts.get)
+        print(f"The overall recommended sentiment for {ticker} is: {recommended_sentiment}")
+    else:
+        print(f"No sentiment data available for ticker {ticker}. Skipping sentiment analysis.")
+
 
 
 def backtest_strategy(predictions, actual_prices):
