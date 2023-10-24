@@ -72,33 +72,39 @@ def plot_sentiment(task, ticker):
 
 
 def backtest_strategy(predictions, actual_prices):
-    """Backtest a simple momentum strategy using predictions."""
+    """Backtest a simple momentum strategy using predictions over the most recent 30 days."""
+    # Ensure there's at least 30 days of data
+    if len(predictions) < 30 or len(actual_prices) < 30:
+        raise ValueError("Insufficient data. At least 30 days of data are required.")
+    
     cash = 10000  # Starting cash
     stock_quantity = 0
     initial_cash = cash
     entry_points = []
     exit_points = []
-    
-    for i in range(len(predictions) - 1):
+
+    # Start the loop 30 days back from the last data point
+    for i in range(len(predictions) - 31, len(predictions) - 1):
         # Buy signal: If next day's prediction is higher and we have cash, buy
         if predictions[i + 1] > predictions[i] and cash >= actual_prices[i]:
             stock_quantity += cash // actual_prices[i]
             cash -= stock_quantity * actual_prices[i]
             entry_points.append(i)
-        
+
         # Sell signal: If next day's prediction is lower and we have stock, sell
         if predictions[i + 1] < predictions[i] and stock_quantity > 0:
             cash += stock_quantity * actual_prices[i]
             stock_quantity = 0
             exit_points.append(i)
-            
+
     # If we're holding stock at the end, sell it
     if stock_quantity > 0:
         cash += stock_quantity * actual_prices[-1]
         exit_points.append(len(predictions) - 1)
-    
+
     profit_or_loss = cash - initial_cash
     return entry_points, exit_points, profit_or_loss
+
 
 
 def predict_future_days(model, data, scaler, days_in_future):
@@ -365,9 +371,16 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
 
 
     # Backtesting logic starts here
-    split_index = int(0.8 * len(y_pred_original_scale))
-    backtest_predictions = y_pred_original_scale[split_index:]
-    backtest_actual = actual_prices[split_index:]
+    #split_index = int(0.8 * len(y_pred_original_scale))
+    # Assuming y_pred_original_scale and actual_prices have more than 30 data points
+    backtest_predictions = y_pred_original_scale[-30:]
+    backtest_actual = actual_prices[-30:]
+
+    # Initial conditions
+    cash = 10000  # Starting cash
+    stock_quantity = 0  # Starting stock quantity
+    initial_cash = cash  # Save the initial cash amount for later calculations
+
 
     entry_points, exit_points, profit_or_loss = backtest_strategy(backtest_predictions, backtest_actual)
 
@@ -382,6 +395,19 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     # Plotting the results
     plt.figure(figsize=(14, 7))
     plt.plot(backtest_actual, label='Actual Prices', color='blue')
+
+    # Highlighting profitable trades
+    for buy, sell in zip(entry_points, exit_points):
+        if backtest_actual[sell] > backtest_actual[buy]:
+            plt.plot([buy, sell], [backtest_actual[buy], backtest_actual[sell]], color='green', linestyle='--', label='Profitable Trade')
+        else:
+            plt.plot([buy, sell], [backtest_actual[buy], backtest_actual[sell]], color='red', linestyle='--', label='Loss Trade')
+
+    # Strategy vs. Buy & Hold
+    buy_and_hold_return = (backtest_actual[-1] - backtest_actual[0]) / backtest_actual[0]
+    cumulative_strategy_return = (cash + stock_quantity * backtest_actual[-1] - initial_cash) / initial_cash
+    plt.axhline(y=backtest_actual[0] * (1 + buy_and_hold_return), color='purple', linestyle='-.', label=f'Buy & Hold Return: {buy_and_hold_return*100:.2f}%')
+    plt.annotate(f"Strategy Return: {cumulative_strategy_return*100:.2f}%", xy=(0.7, 0.95), xycoords='axes fraction', fontsize=10, color='orange')
 
     # Plotting the current price
     current_price = backtest_actual[-1]
@@ -404,6 +430,7 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     plt.tight_layout()
     plt.savefig('backtesting_results.png')
     task.upload_artifact('backtesting_results', 'backtesting_results.png')
+
 
 
 
