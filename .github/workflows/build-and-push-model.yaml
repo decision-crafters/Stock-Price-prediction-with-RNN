@@ -27,6 +27,10 @@ on:
         description: 'Batch Size (suggested: 16, 32, 64, 128, 256)'
         required: true
         default: 32
+      threshold:
+        description: 'Threshold'
+        required: true
+        default: 5
 
 jobs:
   train:
@@ -41,7 +45,7 @@ jobs:
         STOCK: ${{ github.event.inputs.stock }}
         EPOCHS: ${{ github.event.inputs.epochs }}
         BATCH_SIZE: ${{ github.event.inputs.batch_size }}
-
+        THRESHOLD: ${{ github.event.inputs.threshold }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3

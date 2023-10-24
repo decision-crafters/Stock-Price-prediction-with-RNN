@@ -281,7 +281,7 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
     plt.savefig('vwap_actual_predicted.png')
     task.upload_artifact('vwap_actual_predicted', 'vwap_actual_predicted.png')
     # Check if percentage difference is above a certain threshold
-    threshold = 5  # Adjust this value as per your requirement
+    threshold = os.environ.get("THRESHOLD", 5) # Adjust this value as per your requirement
     # Calculate price difference and percentage difference
     price_difference = y_pred_original_scale - actual_prices
     percentage_difference = (price_difference / actual_prices) * 100
