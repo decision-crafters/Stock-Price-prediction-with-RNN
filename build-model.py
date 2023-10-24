@@ -21,15 +21,23 @@ def fetch_news_sentiment(ticker):
     })
     response.raise_for_status()
     data = response.json()
-    print(data)
+    print(data)  # You already have this line to print the API response
+    
     sentiment_scores = []
     sentiment_labels = []
-    for entry in data['feed']:
-        for ticker_data in entry['ticker_sentiment']:
-            if ticker_data['ticker'] == ticker:
-                sentiment_scores.append(float(ticker_data['ticker_sentiment_score']))
-                sentiment_labels.append(ticker_data['ticker_sentiment_label'])
+
+    # Check if 'feed' exists in the response data
+    if 'feed' in data:
+        for entry in data['feed']:
+            for ticker_data in entry['ticker_sentiment']:
+                if ticker_data['ticker'] == ticker:
+                    sentiment_scores.append(float(ticker_data['ticker_sentiment_score']))
+                    sentiment_labels.append(ticker_data['ticker_sentiment_label'])
+    else:
+        print(f"Error: 'feed' not found in the API response for ticker {ticker}.")
+        
     return sentiment_scores, sentiment_labels
+
 
 def convert_score_to_category(score):
     if score <= -0.35:
