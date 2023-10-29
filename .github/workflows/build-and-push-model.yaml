@@ -34,7 +34,7 @@ on:
 
 jobs:
   train:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     env:
         CLEARML_API_ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
         CLEARML_API_SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -46,6 +46,7 @@ jobs:
         EPOCHS: ${{ github.event.inputs.epochs }}
         BATCH_SIZE: ${{ github.event.inputs.batch_size }}
         THRESHOLD: ${{ github.event.inputs.threshold }}
+        
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
