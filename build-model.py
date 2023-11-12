@@ -333,8 +333,13 @@ def model_training(stock: str, training_data_shape: tuple, data_training, scaler
         print(f"Warning: THRESHOLD environment variable '{threshold_str}' is not a valid number. Using default value of 3.")
         threshold = 3.0
 
+    # Check if the last percentage difference is negative
+    if percentage_difference[-1] < 0:
+        raise ValueError("Error: The last percentage difference is negative!")
+
     if abs(percentage_difference[-1]) > threshold:
         raise ValueError(f"Percentage difference for the last date exceeds {threshold}%!")
+
     # Get the last actual price of the Google stock
     last_actual_price = actual_prices[-1]
 
